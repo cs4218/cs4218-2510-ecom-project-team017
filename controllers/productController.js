@@ -416,9 +416,7 @@ export const braintreePaymentController = async (req, res) => {
 
           await order.save();
 
-          return res
-            .status(StatusCodes.CREATED)
-            .json({ success: true, orderId: order._id });
+          return res.status(StatusCodes.CREATED).json({ success: true });
         } catch (saveError) {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
             success: false,
