@@ -380,14 +380,6 @@ export const orderStatusController = async (req, res) => {
       .populate("products", "-photo")
       .populate("buyer", "name");
 
-    if (!order) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        message: "Order not found",
-        error: "Order not found",
-      });
-    }
-
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Order status updated successfully",
