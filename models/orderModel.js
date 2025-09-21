@@ -1,4 +1,8 @@
 import mongoose from "mongoose";
+import {
+  ORDER_STATUS_OPTIONS,
+  ORDER_STATUS,
+} from "../constants/orderConstants.js";
 
 const orderSchema = new mongoose.Schema(
   {
@@ -15,8 +19,8 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: "Not Process",
-      enum: ["Not Process", "Processing", "Shipped", "deliverd", "cancel"],
+      default: ORDER_STATUS.NOT_PROCESSED,
+      enum: ORDER_STATUS_OPTIONS,
     },
   },
   { timestamps: true }
