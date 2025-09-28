@@ -3,7 +3,8 @@ import orderModel from "../models/orderModel.js";
 
 import { comparePassword, hashPassword } from "./../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
-import { StatusCodes } from 'http-status-codes';
+import { StatusCodes } from "http-status-codes";
+import { ORDER_STATUS_OPTIONS } from "../constants/orderConstants.js";
 
 export const registerController = async (req, res) => {
   try {
@@ -14,42 +15,42 @@ export const registerController = async (req, res) => {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "Name is required",
-        error: "Name is required"
+        error: "Name is required",
       });
     }
     if (!email) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "Email is required",
-        error: "Email is required"
+        error: "Email is required",
       });
     }
     if (!password) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "Password is required",
-        error: "Password is required"
+        error: "Password is required",
       });
     }
     if (!phone) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "Phone number is required",
-        error: "Phone number is required"
+        error: "Phone number is required",
       });
     }
     if (!address) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "Address is required",
-        error: "Address is required"
+        error: "Address is required",
       });
     }
     if (!answer) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "Security answer is required",
-        error: "Security answer is required"
+        error: "Security answer is required",
       });
     }
 
@@ -86,7 +87,7 @@ export const registerController = async (req, res) => {
         address: user.address,
         role: user.role,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
       },
     });
   } catch (error) {
@@ -95,7 +96,10 @@ export const registerController = async (req, res) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       message: "Error in registration process",
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -154,7 +158,10 @@ export const loginController = async (req, res) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       message: "Error during login process",
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -169,21 +176,21 @@ export const forgotPasswordController = async (req, res) => {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "Email is required",
-        error: "Email is required"
+        error: "Email is required",
       });
     }
     if (!answer) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "Security answer is required",
-        error: "Security answer is required"
+        error: "Security answer is required",
       });
     }
     if (!newPassword) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         success: false,
         message: "New password is required",
-        error: "New password is required"
+        error: "New password is required",
       });
     }
 
@@ -209,7 +216,10 @@ export const forgotPasswordController = async (req, res) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       message: "Error during password reset process",
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -224,94 +234,163 @@ export const testController = (req, res) => {
   }
 };
 
-//update prfole
+// Update profile controller
 export const updateProfileController = async (req, res) => {
   try {
-    const { name, email, password, address, phone } = req.body;
-    const user = await userModel.findById(req.user._id);
-    //password
-    if (password && password.length < 6) {
-      return res.json({ error: "Passsword is required and 6 character long" });
+    const { name, password, address, phone } = req.body;
+
+    // Validate user ID exists
+    if (!req.user || !req.user._id) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "User ID not found in request",
+        error: "User ID not found in request",
+      });
     }
+
+    const user = await userModel.findById(req.user._id);
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "User not found",
+        error: "User not found",
+      });
+    }
+
+    // Validate password
+    if (password && password.length < 6) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Password is required and should be at least 6 characters",
+        error: "Password is required and should be at least 6 characters",
+      });
+    }
+
     const hashedPassword = password ? await hashPassword(password) : undefined;
-    const updatedUser = await userModel.findByIdAndUpdate(
-      req.user._id,
-      {
-        name: name || user.name,
-        password: hashedPassword || user.password,
-        phone: phone || user.phone,
-        address: address || user.address,
-      },
-      { new: true }
-    );
-    res.status(200).send({
+    const updatedUser = await userModel
+      .findByIdAndUpdate(
+        req.user._id,
+        {
+          name: name || user.name,
+          password: hashedPassword || user.password,
+          phone: phone || user.phone,
+          address: address || user.address,
+        },
+        { new: true }
+      )
+      .select("-password"); // Exclude password from response for security
+
+    res.status(StatusCodes.OK).json({
       success: true,
-      message: "Profile Updated SUccessfully",
+      message: "Profile updated successfully",
       updatedUser,
     });
   } catch (error) {
     console.log(error);
-    res.status(400).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Error WHile Update profile",
-      error,
+      message: "Error while updating profile",
+      error: error.message,
     });
   }
 };
 
-//orders
+// Get orders controller
 export const getOrdersController = async (req, res) => {
   try {
+    if (!req.user || !req.user._id) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "User ID not found in request",
+        error: "User ID not found in request",
+      });
+    }
+
     const orders = await orderModel
       .find({ buyer: req.user._id })
       .populate("products", "-photo")
-      .populate("buyer", "name");
-    res.json(orders);
+      .populate("buyer", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(StatusCodes.OK).json(orders);
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Error WHile Geting Orders",
-      error,
+      message: "Error while getting orders",
+      error: error.message,
     });
   }
 };
-//orders
+
+// Get all orders controller
 export const getAllOrdersController = async (req, res) => {
   try {
     const orders = await orderModel
       .find({})
       .populate("products", "-photo")
       .populate("buyer", "name")
-      .sort({ createdAt: "-1" });
-    res.json(orders);
+      .sort({ createdAt: -1 });
+
+    res.status(StatusCodes.OK).json(orders);
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Error WHile Geting Orders",
-      error,
+      message: "Error while getting orders",
+      error: error.message,
     });
   }
 };
 
-//order status
+// Order status controller
 export const orderStatusController = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
-    const orders = await orderModel.findByIdAndUpdate(
-      orderId,
-      { status },
-      { new: true }
-    );
-    res.json(orders);
+
+    if (!orderId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Order ID is required",
+        error: "Order ID is required",
+      });
+    }
+
+    if (!status) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Status is required",
+        error: "Status is required",
+      });
+    }
+
+    // Validate status value
+    if (!ORDER_STATUS_OPTIONS.includes(status)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid status value",
+        error: `Status must be one of: ${ORDER_STATUS_OPTIONS.join(", ")}`,
+      });
+    }
+
+    const order = await orderModel
+      .findByIdAndUpdate(orderId, { status }, { new: true })
+      .populate("products", "-photo")
+      .populate("buyer", "name");
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Order status updated successfully",
+      order,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Error While Updateing Order",
-      error,
+      message: "Error while updating order status",
+      error: error.message,
     });
   }
 };
