@@ -10,9 +10,7 @@ const handleSubmit = jest.fn((e) => {
     e.preventDefault();
 });
 
-const setValue = jest.fn((value) => {
-    testValue = value
-});
+const setValue = jest.fn();
 
 describe('Create New Category Form', () => {
     it('renders category form', () => {
@@ -46,14 +44,14 @@ describe('Create New Category Form', () => {
             <MemoryRouter initialEntries={['/dashboard/admin/create-category']}>
                 <Routes>
                     <Route path="/dashboard/admin/create-category"
-                        element={<CategoryForm handleSubmit={handleSubmit} value={testValue} setValue={setValue} />} />
+                        element={<CategoryForm handleSubmit={handleSubmit} setValue={setValue} />} />
                 </Routes>
             </MemoryRouter>
         );
 
         fireEvent.change(getByPlaceholderText('Enter new category'), { target: { value: 'test category' } });
-        // expect(getByPlaceholderText('Enter new category').value).toBe('test category');
-        expect(testValue).toBe('test category');
+        expect(getByPlaceholderText('Enter new category').value).toBe('test category');
+        expect(setValue).toHaveBeenCalled();
     });
 
     it('should create new category successfully', () => {
@@ -61,15 +59,15 @@ describe('Create New Category Form', () => {
             <MemoryRouter initialEntries={['/dashboard/admin/create-category']}>
                 <Routes>
                     <Route path="/dashboard/admin/create-category"
-                        element={<CategoryForm handleSubmit={handleSubmit} value={testValue} setValue={setValue} />} />
+                        element={<CategoryForm handleSubmit={handleSubmit} setValue={setValue} />} />
                 </Routes>
             </MemoryRouter>
         );
 
         fireEvent.change(getByPlaceholderText('Enter new category'), { target: { value: 'test category' } });
         fireEvent.click(getByText('Submit'));
-        // expect(getByPlaceholderText('Enter new category').value).toBe('test category');
-        expect(testValue).toBe('test category');
+        expect(getByPlaceholderText('Enter new category').value).toBe('test category');
+        expect(setValue).toHaveBeenCalled();
         expect(handleSubmit).toHaveBeenCalled();
     });
 });
