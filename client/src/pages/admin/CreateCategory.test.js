@@ -8,6 +8,7 @@ import CreateCategory from './CreateCategory.js';
 
 jest.mock('axios');
 jest.mock('react-hot-toast');
+const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
 // Mock Layout
 jest.mock("../../components/Layout", () => {
@@ -37,39 +38,38 @@ jest.mock('../../components/Form/CategoryForm', () => {
 
 const mockUseCategory = [
   {
-    "_id": "66db427fdb0119d9234b27ed",
-    "name": "Electronics",
-    "slug": "electronics",
-    "__v": 0
+    _id: "66db427fdb0119d9234b27ed",
+    name: "Electronics",
+    slug: "electronics",
+    __v: 0
   },
   {
-    "_id": "66db427fdb0119d9234b27ef",
-    "name": "Book",
-    "slug": "book",
-    "__v": 0
+    _id: "66db427fdb0119d9234b27ef",
+    name: "Book",
+    slug: "book",
+    __v: 0
   },
   {
-    "_id": "66db427fdb0119d9234b27ee",
-    "name": "Clothing",
-    "slug": "clothing",
-    "__v": 0
+    _id: "66db427fdb0119d9234b27ee",
+    name: "Clothing",
+    slug: "clothing",
+    __v: 0
   }
 ];
 
 describe('CreateCategory Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    axios.get.mockResolvedValue({
+      data: {
+        success: true,
+        message: "All Categories List",
+        category: mockUseCategory
+      }
+    });
   })
 
   it('renders create categories page', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: {
-        "success": true,
-        "message": "All Categories List",
-        "category": mockUseCategory
-      }
-    });
-
     const { getByText, getByTestId } = render(
       <MemoryRouter initialEntries={['/create-category']}>
         <Routes>
@@ -105,17 +105,9 @@ describe('CreateCategory Component', () => {
   });
 
   it('should handle category creation', async () => {
-    axios.get.mockResolvedValue({
-      data: {
-        "success": true,
-        "message": "All Categories List",
-        "category": mockUseCategory
-      }
-    });
-
     axios.post.mockResolvedValueOnce({
       data: {
-        "success": true
+        success: true
       }
     });
 
@@ -143,17 +135,9 @@ describe('CreateCategory Component', () => {
   });
 
   it('should handle edits to category name', async () => {
-    axios.get.mockResolvedValue({
-      data: {
-        "success": true,
-        "message": "All Categories List",
-        "category": mockUseCategory
-      }
-    });
-
     axios.put.mockResolvedValueOnce({
       data: {
-        "success": true
+        success: true
       }
     });
 
@@ -188,17 +172,9 @@ describe('CreateCategory Component', () => {
   });
 
   it('should handle category deletion', async () => {
-    axios.get.mockResolvedValue({
-      data: {
-        "success": true,
-        "message": "All Categories List",
-        "category": mockUseCategory
-      }
-    });
-
     axios.delete.mockResolvedValueOnce({
       data: {
-        "success": true
+        success: true
       }
     });
 

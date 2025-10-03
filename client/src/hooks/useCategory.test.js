@@ -16,9 +16,9 @@ describe('try get categories', () => {
 
         axios.get.mockResolvedValueOnce({
             data: {
-                "success": true,
-                "message": "All Categories List",
-                "category": [
+                success: true,
+                message: "All Categories List",
+                category: [
                     {
                         "_id": "66db427fdb0119d9234b27ef",
                         "name": "Book",
@@ -33,5 +33,16 @@ describe('try get categories', () => {
 
         await waitFor(() => expect(axios.get).toHaveBeenCalled());
         expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
+    });
+
+    it('unsuccessful invocation of get categories api', async () => {
+        const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+        axios.get.mockRejectedValueOnce(new Error('API error'));
+
+        const { result } = renderHook(() => useCategory());
+
+        await waitFor(() => expect(axios.get).toHaveBeenCalled());
+        expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
+        expect(logSpy).toHaveBeenCalled();
     });
 });

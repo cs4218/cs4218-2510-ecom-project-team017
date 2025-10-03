@@ -27,28 +27,26 @@ jest.mock("../components/Layout", () => {
 });
 
 const mockUseCategory = [{
-      "_id": "66db427fdb0119d9234b27ed",
-      "name": "Electronics",
-      "slug": "electronics",
-      "__v": 0
+      _id: "66db427fdb0119d9234b27ed",
+      name: "Electronics",
+      slug: "electronics",
+      __v: 0
     },
     {
-      "_id": "66db427fdb0119d9234b27ef",
-      "name": "Book",
-      "slug": "book",
-      "__v": 0
+      _id: "66db427fdb0119d9234b27ef",
+      name: "Book",
+      slug: "book",
+      __v: 0
     },
     {
-      "_id": "66db427fdb0119d9234b27ee",
-      "name": "Clothing",
-      "slug": "clothing",
-      "__v": 0
+      _id: "66db427fdb0119d9234b27ee",
+      name: "Clothing",
+      slug: "clothing",
+      __v: 0
     }
   ]
 
-
-
-describe ( 'Categories Page' , () => {
+describe ('Categories Page' , () => {
 
     beforeEach(() => {
         jest.clearAllMocks();

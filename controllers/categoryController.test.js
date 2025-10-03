@@ -9,6 +9,7 @@ import categoryModel from "../models/categoryModel.js";
 jest.mock('../models/categoryModel');
 jest.mock('slugify', () => jest.fn((name) => name.toLowerCase().replace(/\s+/g, '-')));
 const error = new Error('DB error');
+const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
 describe('Create Category Controller', () => {
     let req, res;

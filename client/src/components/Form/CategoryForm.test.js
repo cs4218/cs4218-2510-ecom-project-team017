@@ -39,6 +39,21 @@ describe('Create New Category Form', () => {
         expect(getByPlaceholderText('Enter new category').value).toBe('');
     })
 
+    it('initial input not empty', () => {
+        testValue = 'Electronics';
+
+        const { getByPlaceholderText } = render(
+            <MemoryRouter initialEntries={['/dashboard/admin/create-category']}>
+                <Routes>
+                    <Route path="/dashboard/admin/create-category"
+                        element={<CategoryForm handleSubmit={handleSubmit} value={testValue} setValue={setValue} />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(getByPlaceholderText('Enter new category').value).toBe('Electronics');
+    })
+
     it('should allow typing new category name', () => {
         const { getByPlaceholderText } = render(
             <MemoryRouter initialEntries={['/dashboard/admin/create-category']}>
