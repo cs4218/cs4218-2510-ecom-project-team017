@@ -1109,6 +1109,7 @@ describe("Product Filters Controller", () => {
       products,
     });
   });
+
   it("should return 200 with filtered products by both category and price range", async () => {
     const categories = ["66db427fdb0119d9234b27ed"];
     const priceRange = [20, 100];
@@ -1166,5 +1167,103 @@ describe("Product Filters Controller", () => {
       success: true,
       products,
     });
+  });
+});
+
+describe("Search Product Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      params: {
+        keyword: "test",
+      },
+    };
+
+    res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return products matching the keyword in name or description", async () => {
+    const products = [
+      { _id: "p1", name: "Test Product", description: "Normal description" },
+      { _id: "p2", name: "Another Product", description: "Test description" },
+    ];
+
+    productModel.find.mockReturnValue({
+      select: jest.fn().mockResolvedValue(products),
+    });
+
+    await searchProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({
+      $or: [
+        { name: { $regex: "test", $options: "i" } },
+        { description: { $regex: "test", $options: "i" } },
+      ],
+    });
+    expect(res.json).toHaveBeenCalledWith(products);
+  });
+
+  it("should return empty array when no products match the search keyword", async () => {
+    productModel.find.mockReturnValue({
+      select: jest.fn().mockResolvedValue([]),
+    });
+
+    await searchProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({
+      $or: [
+        { name: { $regex: "test", $options: "i" } },
+        { description: { $regex: "test", $options: "i" } },
+      ],
+    });
+    expect(res.json).toHaveBeenCalledWith([]);
+  });
+
+  it("should return 400 in case of error during search", async () => {
+    productModel.find.mockReturnValue({
+      select: jest.fn().mockRejectedValue(error),
+    });
+
+    await searchProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Error searching products.",
+      error,
+    });
+  });
+
+  it("should handle special characters in search keyword", async () => {
+    req.params.keyword = "special+chars?";
+
+    const products = [
+      {
+        _id: "p1",
+        name: "Product with special+chars?",
+        description: "Description",
+      },
+    ];
+
+    productModel.find.mockReturnValue({
+      select: jest.fn().mockResolvedValue(products),
+    });
+
+    await searchProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({
+      $or: [
+        { name: { $regex: "special+chars?", $options: "i" } },
+        { description: { $regex: "special+chars?", $options: "i" } },
+      ],
+    });
+    expect(res.json).toHaveBeenCalledWith(products);
   });
 });
