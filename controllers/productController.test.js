@@ -587,7 +587,7 @@ describe("Create Product Controller", () => {
 
     await createProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500); 
+    expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith({ error: "Name is required." });
   });
 
@@ -660,7 +660,7 @@ describe("Create Product Controller", () => {
 
     await createProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500); 
+    expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith({ error: "Name is required." });
   });
 
@@ -729,6 +729,176 @@ describe("Create Product Controller", () => {
       success: false,
       error,
       message: "Error creating product.",
+    });
+  });
+});
+
+describe("Update Product Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      params: {
+        pid: "66db427fdb0119d9234b27ed",
+      },
+      fields: {
+        name: "Updated Product",
+        description: "Updated Description",
+        price: 149.99,
+        category: "66db427fdb0119d9234b27ed",
+        quantity: 20,
+        shipping: false,
+      },
+      files: {
+        photo: {
+          path: "/tmp/updated-photo.jpg",
+          size: 60000,
+          type: "image/png",
+        },
+      },
+    };
+
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+
+    // Mock fs.readFileSync
+    fs.readFileSync.mockReturnValue(Buffer.from("updated image data"));
+  });
+
+  it("should return 201 on successful product update", async () => {
+    const updatedProduct = {
+      _id: "66db427fdb0119d9234b27ed",
+      ...req.fields,
+      slug: "updated-product",
+      photo: {
+        data: null,
+        contentType: null,
+      },
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+
+    productModel.findByIdAndUpdate.mockResolvedValue(updatedProduct);
+
+    await updateProductController(req, res);
+
+    expect(slugify).toHaveBeenCalledWith("Updated Product");
+    expect(productModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      req.params.pid,
+      { ...req.fields, slug: "updated-product" },
+      { new: true }
+    );
+    expect(fs.readFileSync).toHaveBeenCalledWith("/tmp/updated-photo.jpg");
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product updated successfully.",
+      products: expect.objectContaining({
+        _id: "66db427fdb0119d9234b27ed",
+        name: "Updated Product",
+      }),
+    });
+  });
+
+  it("should return 500 if name is missing during update", async () => {
+    req.fields.name = "";
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Name is required." });
+    expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it("should return 500 if description is missing during update", async () => {
+    req.fields.description = "";
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Description is required." });
+    expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it("should return 500 if price is missing during update", async () => {
+    req.fields.price = "";
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Price is required." });
+    expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it("should return 500 if category is missing during update", async () => {
+    req.fields.category = "";
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Category is required." });
+    expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it("should return 500 if quantity is missing during update", async () => {
+    req.fields.quantity = "";
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Quantity is required." });
+    expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it("should return 500 if photo size is too large during update", async () => {
+    req.files.photo.size = 1500000; // Larger than 1MB limit
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      error: "Photo is required and must be less than 1MB.",
+    });
+    expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it("should return 500 in case of database error during update", async () => {
+    productModel.findByIdAndUpdate.mockRejectedValue(error);
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      error,
+      message: "Error updating product.",
+    });
+  });
+
+  it("should handle error when saving updated photo", async () => {
+    const updatedProduct = {
+      _id: "66db427fdb0119d9234b27ed",
+      ...req.fields,
+      slug: "updated-product",
+      photo: {
+        data: null,
+        contentType: null,
+      },
+      save: jest.fn().mockRejectedValue(error),
+    };
+
+    productModel.findByIdAndUpdate.mockResolvedValue(updatedProduct);
+
+    await updateProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      error,
+      message: "Error updating product.",
     });
   });
 });
