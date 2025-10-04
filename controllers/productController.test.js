@@ -3,8 +3,17 @@ import { StatusCodes } from "http-status-codes";
 import {
   braintreePaymentController,
   braintreeTokenController,
+  createProductController,
+  updateProductController,
+  deleteProductController,
+  getSingleProductController,
+  productFiltersController,
+  searchProductController,
 } from "./productController.js";
 import orderModel from "../models/orderModel.js";
+import fs from "fs";
+import slugify from "slugify";
+import productModel from "../models/productModel.js";
 
 /**
  * Mock the Braintree SDK to simulate payment gateway interactions
@@ -454,6 +463,272 @@ describe("Braintree Payment Controller", () => {
         message: "Unexpected error during payment",
         error: unexpectedError.message,
       });
+    });
+  });
+});
+
+/**
+ * Mock dependencies
+ */
+jest.mock("../models/productModel");
+jest.mock("fs");
+jest.mock("slugify", () =>
+  jest.fn((name) => name.toLowerCase().replace(/\s+/g, "-"))
+);
+
+const error = new Error("DB error");
+const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+describe("Create Product Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      fields: {
+        name: "Test Product",
+        description: "Test Description",
+        price: 99.99,
+        category: "66db427fdb0119d9234b27ed",
+        quantity: 10,
+        shipping: true,
+      },
+      files: {
+        photo: {
+          path: "/tmp/test-photo.jpg",
+          size: 50000,
+          type: "image/jpeg",
+        },
+      },
+    };
+
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+
+    // Mock fs.readFileSync
+    fs.readFileSync.mockReturnValue(Buffer.from("test image data"));
+  });
+
+  it("should return 201 on successful product creation", async () => {
+    const savedProduct = {
+      ...req.fields,
+      slug: "test-product",
+      photo: {
+        data: Buffer.from("test image data"),
+        contentType: "image/jpeg",
+      },
+    };
+
+    productModel.mockImplementation(() => ({
+      photo: {
+        data: null,
+        contentType: null,
+      },
+      save: jest.fn().mockResolvedValue(savedProduct),
+    }));
+
+    await createProductController(req, res);
+
+    expect(slugify).toHaveBeenCalledWith("Test Product");
+    expect(fs.readFileSync).toHaveBeenCalledWith("/tmp/test-photo.jpg");
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product created successfully.",
+      products: expect.objectContaining({
+        photo: expect.objectContaining({
+          data: expect.any(Buffer),
+          contentType: "image/jpeg",
+        }),
+      }),
+    });
+  });
+
+  it("should return 201 on successful product creation", async () => {
+    const savedProduct = {
+      ...req.fields,
+      slug: "test-product",
+      photo: {
+        data: Buffer.from("test image data"),
+        contentType: "image/jpeg",
+      },
+    };
+
+    productModel.mockImplementation(() => ({
+      photo: {
+        data: null,
+        contentType: null,
+      },
+      save: jest.fn().mockResolvedValue(savedProduct),
+    }));
+
+    await createProductController(req, res);
+
+    expect(slugify).toHaveBeenCalledWith("Test Product");
+    expect(fs.readFileSync).toHaveBeenCalledWith("/tmp/test-photo.jpg");
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product created successfully.",
+      products: expect.objectContaining({
+        photo: expect.objectContaining({
+          data: expect.any(Buffer),
+          contentType: "image/jpeg",
+        }),
+      }),
+    });
+  });
+
+  it("should return 500 if name is missing", async () => {
+    req.fields.name = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500); 
+    expect(res.send).toHaveBeenCalledWith({ error: "Name is required." });
+  });
+
+  it("should return 500 if description is missing", async () => {
+    req.fields.description = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      error: "Description is required.",
+    });
+  });
+
+  it("should return 500 if price is missing", async () => {
+    req.fields.price = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Price is required." });
+  });
+
+  it("should return 500 if category is missing", async () => {
+    req.fields.category = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Category is required." });
+  });
+
+  it("should return 201 on successful product creation", async () => {
+    const savedProduct = {
+      ...req.fields,
+      slug: "test-product",
+      photo: {
+        data: Buffer.from("test image data"),
+        contentType: "image/jpeg",
+      },
+    };
+
+    productModel.mockImplementation(() => ({
+      photo: {
+        data: null,
+        contentType: null,
+      },
+      save: jest.fn().mockResolvedValue(savedProduct),
+    }));
+
+    await createProductController(req, res);
+
+    expect(slugify).toHaveBeenCalledWith("Test Product");
+    expect(fs.readFileSync).toHaveBeenCalledWith("/tmp/test-photo.jpg");
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product created successfully.",
+      products: expect.objectContaining({
+        photo: expect.objectContaining({
+          data: expect.any(Buffer),
+          contentType: "image/jpeg",
+        }),
+      }),
+    });
+  });
+
+  it("should return 500 if name is missing", async () => {
+    req.fields.name = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500); 
+    expect(res.send).toHaveBeenCalledWith({ error: "Name is required." });
+  });
+
+  it("should return 500 if description is missing", async () => {
+    req.fields.description = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      error: "Description is required.",
+    });
+  });
+
+  it("should return 500 if price is missing", async () => {
+    req.fields.price = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Price is required." });
+  });
+
+  it("should return 500 if category is missing", async () => {
+    req.fields.category = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Category is required." });
+  });
+
+  it("should return 500 if quantity is missing", async () => {
+    req.fields.quantity = "";
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Quantity is required." });
+  });
+
+  it("should return 500 if photo size is too large", async () => {
+    req.files.photo.size = 1500000; // Larger than 1MB limit
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      error: "Photo is required and must be less than 1MB.",
+    });
+  });
+
+  it("should return 500 in case of database error", async () => {
+    productModel.mockImplementation(() => ({
+      photo: {
+        data: null,
+        contentType: null,
+      },
+      save: jest.fn().mockRejectedValue(error),
+    }));
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      error,
+      message: "Error creating product.",
     });
   });
 });
