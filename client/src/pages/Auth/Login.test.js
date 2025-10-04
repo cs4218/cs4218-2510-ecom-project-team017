@@ -56,19 +56,69 @@ describe('Login Component - Comprehensive Tests', () => {
   });
 
   describe('Equivalence Partitioning Tests', () => {
-    it('should handle valid input partitions', () => {
-      renderComponent();
+    describe('Valid Input Partitions', () => {
+      it('should accept valid email format', () => {
+        renderComponent();
+        const emailInput = screen.getByPlaceholderText('Enter Your Email');
 
-      const emailInput = screen.getByPlaceholderText('Enter Your Email');
-      const passwordInput = screen.getByPlaceholderText('Enter Your Password');
+        fireEvent.change(emailInput, { target: { value: 'user@example.com' } });
 
-      // Valid email formats
-      fireEvent.change(emailInput, { target: { value: 'user@example.com' } });
-      expect(emailInput.value).toBe('user@example.com');
+        expect(emailInput.value).toBe('user@example.com');
+        expect(emailInput.validity.valid).toBe(true);
+      });
 
-      // Valid password
-      fireEvent.change(passwordInput, { target: { value: 'securePassword123' } });
-      expect(passwordInput.value).toBe('securePassword123');
+      it('should accept valid password (6+ characters)', () => {
+        renderComponent();
+        const passwordInput = screen.getByPlaceholderText('Enter Your Password');
+
+        fireEvent.change(passwordInput, { target: { value: 'securePassword123' } });
+
+        expect(passwordInput.value).toBe('securePassword123');
+        expect(passwordInput.validity.valid).toBe(true);
+      });
+    });
+
+    describe('Invalid Email Partitions', () => {
+      it('should reject email without @ symbol', () => {
+        renderComponent();
+        const emailInput = screen.getByPlaceholderText('Enter Your Email');
+
+        fireEvent.change(emailInput, { target: { value: 'userexample.com' } });
+
+        expect(emailInput.validity.valid).toBe(false);
+        expect(emailInput.validity.typeMismatch).toBe(true);
+        expect(emailInput.validationMessage).toBeTruthy();
+      });
+
+      it('should reject empty email', () => {
+        renderComponent();
+        const emailInput = screen.getByPlaceholderText('Enter Your Email');
+
+        fireEvent.change(emailInput, { target: { value: '' } });
+
+        expect(emailInput.validity.valid).toBe(false);
+        expect(emailInput.validity.valueMissing).toBe(true);
+      });
+    });
+
+    describe('Form Submission Prevention with Invalid Inputs', () => {
+      it('should prevent submission with invalid email', async () => {
+        renderComponent();
+
+        fireEvent.change(screen.getByPlaceholderText('Enter Your Email'), {
+          target: { value: 'invalidemail' }
+        });
+        fireEvent.change(screen.getByPlaceholderText('Enter Your Password'), {
+          target: { value: 'password123' }
+        });
+
+        fireEvent.click(screen.getByText('LOGIN'));
+
+        // Should not call API due to client-side validation
+        await waitFor(() => {
+          expect(axios.post).not.toHaveBeenCalled();
+        });
+      });
     });
   });
 
@@ -104,32 +154,79 @@ describe('Login Component - Comprehensive Tests', () => {
     });
   });
 
-  it('should handle 401 unauthorized errors', async () => {
-    axios.post.mockRejectedValue({
-      response: {
-        status: 401,
-        data: { message: 'Invalid email or password' }
-      }
+  describe('Error Handling - HTTP Status Code Partitions', () => {
+    it('should handle 401 unauthorized errors', async () => {
+      axios.post.mockRejectedValue({
+        response: {
+          status: 401,
+          data: { message: 'Invalid email or password' }
+        }
+      });
+
+      renderComponent();
+
+      fireEvent.change(screen.getByPlaceholderText('Enter Your Email'), {
+        target: { value: 'test@example.com' }
+      });
+      fireEvent.change(screen.getByPlaceholderText('Enter Your Password'), {
+        target: { value: 'wrongpassword' }
+      });
+      fireEvent.click(screen.getByText('LOGIN'));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Invalid email or password');
+      });
     });
 
-    renderComponent();
+    it('should handle other error statuses', async () => {
+      axios.post.mockRejectedValue({
+        response: {
+          status: 500,
+          data: { message: 'Server error' }
+        }
+      });
 
-    fireEvent.change(screen.getByPlaceholderText('Enter Your Email'), {
-      target: { value: 'test@example.com' }
-    });
-    fireEvent.change(screen.getByPlaceholderText('Enter Your Password'), {
-      target: { value: 'wrongpassword' }
-    });
-    fireEvent.click(screen.getByText('LOGIN'));
+      renderComponent();
 
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Invalid email or password');
+      fireEvent.change(screen.getByPlaceholderText('Enter Your Email'), {
+        target: { value: 'test@example.com' }
+      });
+      fireEvent.change(screen.getByPlaceholderText('Enter Your Password'), {
+        target: { value: 'password123' }
+      });
+      fireEvent.click(screen.getByText('LOGIN'));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Server error');
+      });
+    });
+
+    it('should handle network errors', async () => {
+      axios.post.mockRejectedValue(new Error('Network error'));
+
+      renderComponent();
+
+      fireEvent.change(screen.getByPlaceholderText('Enter Your Email'), {
+        target: { value: 'test@example.com' }
+      });
+      fireEvent.change(screen.getByPlaceholderText('Enter Your Password'), {
+        target: { value: 'password123' }
+      });
+      fireEvent.click(screen.getByText('LOGIN'));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Something went wrong. Please try again.');
+      });
     });
   });
-
 });
 
 describe('Successful Login Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const { useAuth } = require('../../context/auth');
+    useAuth.mockImplementation(() => [null, jest.fn()]);
+  });
 
   it('should redirect to home on successful login', async () => {
     axios.post.mockResolvedValue({
@@ -158,6 +255,12 @@ describe('Successful Login Tests', () => {
 });
 
 describe('Navigation Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const { useAuth } = require('../../context/auth');
+    useAuth.mockImplementation(() => [null, jest.fn()]);
+  });
+
   it('should navigate to forgot password page', () => {
     renderComponent();
 

@@ -96,6 +96,7 @@ const Login = () => {
               id="exampleInputPassword1"
               placeholder="Enter Your Password"
               required
+              minLength={6}
               disabled={loading}
             />
           </div>
