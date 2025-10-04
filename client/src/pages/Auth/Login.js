@@ -10,44 +10,64 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [auth, setAuth] = useAuth();
-  
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-  
 
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
       const res = await axios.post("/api/v1/auth/login", {
         email,
         password,
       });
+
       if (res && res.data.success) {
         toast.success(res.data && res.data.message, {
-            duration: 5000,
-            icon: "🙏",
-            style: {
-              background: "green",
-              color: "white",
-            },
-          });
+          duration: 5000,
+          icon: "🙏",
+          style: {
+            background: "green",
+            color: "white",
+          },
+        });
         setAuth({
-            ...auth,
-            user: res.data.user,
-            token: res.data.token,
+          ...auth,
+          user: res.data.user,
+          token: res.data.token,
         });
         localStorage.setItem("auth", JSON.stringify(res.data));
         navigate(location.state || "/");
       } else {
-        toast.error(res.data.message);
+        toast.error(res.data.message || "Login failed");
       }
     } catch (error) {
       console.log(error);
-      toast.error("Something went wrong");
+
+      // Handle different types of errors
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const message = error.response.data?.message;
+
+        if (status === 401) {
+          toast.error(message || "Invalid email or password");
+        } else {
+          toast.error(message || "Login failed");
+        }
+      } else {
+        // Something else happened
+        toast.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <Layout title="Login - Ecommerce App">
       <div className="form-container " style={{ minHeight: "90vh" }}>
@@ -64,6 +84,7 @@ const Login = () => {
               id="exampleInputEmail1"
               placeholder="Enter Your Email "
               required
+              disabled={loading}
             />
           </div>
           <div className="mb-3">
@@ -75,6 +96,8 @@ const Login = () => {
               id="exampleInputPassword1"
               placeholder="Enter Your Password"
               required
+              minLength={6}
+              disabled={loading}
             />
           </div>
           <div className="mb-3">
@@ -84,13 +107,18 @@ const Login = () => {
               onClick={() => {
                 navigate("/forgot-password");
               }}
+              disabled={loading}
             >
               Forgot Password
             </button>
           </div>
 
-          <button type="submit" className="btn btn-primary">
-            LOGIN
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? "LOGGING IN..." : "LOGIN"}
           </button>
         </form>
       </div>

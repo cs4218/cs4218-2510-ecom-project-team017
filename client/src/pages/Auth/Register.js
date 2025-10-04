@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "../../styles/AuthStyles.css";
+
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -12,11 +13,31 @@ const Register = () => {
   const [address, setAddress] = useState("");
   const [DOB, setDOB] = useState("");
   const [answer, setAnswer] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
+
+  // Validate password before submission
+  const validatePassword = (password) => {
+    if (password.length < 6) {
+      return "Password must be at least 6 characters long";
+    }
+    return "";
+  };
 
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate password before API call
+    const passwordValidationError = validatePassword(password);
+    if (passwordValidationError) {
+      setPasswordError(passwordValidationError);
+      toast.error(passwordValidationError);
+      return;
+    }
+
+    setPasswordError(""); // Clear any previous errors
+
     try {
       const res = await axios.post("/api/v1/auth/register", {
         name,
@@ -36,6 +57,18 @@ const Register = () => {
     } catch (error) {
       console.log(error);
       toast.error("Something went wrong");
+    }
+  };
+
+  // Handle password change with real-time validation
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+
+    if (newPassword.length > 0 && newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters long");
+    } else {
+      setPasswordError("");
     }
   };
 
@@ -71,12 +104,17 @@ const Register = () => {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="form-control"
+              onChange={handlePasswordChange}
+              className={`form-control ${passwordError ? 'is-invalid' : ''}`}
               id="exampleInputPassword1"
               placeholder="Enter Your Password"
               required
             />
+            {passwordError && (
+              <div className="invalid-feedback d-block">
+                {passwordError}
+              </div>
+            )}
           </div>
           <div className="mb-3">
             <input
