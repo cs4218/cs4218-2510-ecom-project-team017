@@ -933,30 +933,116 @@ describe("Update Product Controller", () => {
 //     });
 //   });
 
-  // it("should return 500 in case of error during product deletion", async () => {
-  //   productModel.findByIdAndDelete.mockRejectedValueOnce(error);
+// it("should return 500 in case of error during product deletion", async () => {
+//   productModel.findByIdAndDelete.mockRejectedValueOnce(error);
 
-  //   await deleteProductController(req, res);
+//   await deleteProductController(req, res);
 
-  //   expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
-  //   expect(res.status).toHaveBeenCalledWith(500);
-  //   expect(res.send).toHaveBeenCalledWith({
-  //     success: false,
-  //     message: "Error deleting product.",
-  //     error: mockErr,
-  //   });
-  // });
-
-  // it("should handle case where product is not found for deletion", async () => {
-  //   productModel.findByIdAndDelete.mockResolvedValue(null);
-
-  //   await deleteProductController(req, res);
-
-  //   expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
-  //   expect(res.status).toHaveBeenCalledWith(200);
-  //   expect(res.send).toHaveBeenCalledWith({
-  //     success: true,
-  //     message: "Product deleted successfully.",
-  //   });
-  // });
+//   expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
+//   expect(res.status).toHaveBeenCalledWith(500);
+//   expect(res.send).toHaveBeenCalledWith({
+//     success: false,
+//     message: "Error deleting product.",
+//     error: mockErr,
+//   });
 // });
+
+// it("should handle case where product is not found for deletion", async () => {
+//   productModel.findByIdAndDelete.mockResolvedValue(null);
+
+//   await deleteProductController(req, res);
+
+//   expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
+//   expect(res.status).toHaveBeenCalledWith(200);
+//   expect(res.send).toHaveBeenCalledWith({
+//     success: true,
+//     message: "Product deleted successfully.",
+//   });
+// });
+// });
+
+describe("Get Single Product Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      params: {
+        slug: "test-product",
+      },
+    };
+
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return 200 when getting a single product is successful", async () => {
+    const product = {
+      _id: "66db427fdb0119d9234b27ed",
+      name: "Test Product",
+      slug: "test-product",
+      description: "Test Description",
+      price: 99.99,
+      category: {
+        _id: "66db427fdb0119d9234b27ee",
+        name: "Electronics",
+      },
+      quantity: 10,
+    };
+
+    productModel.findOne.mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue(product),
+      }),
+    });
+
+    await getSingleProductController(req, res);
+
+    expect(productModel.findOne).toHaveBeenCalledWith({ slug: "test-product" });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product fetched successfully.",
+      product,
+    });
+  });
+
+  it("should return 500 in case of error when getting a single product", async () => {
+    productModel.findOne.mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        populate: jest.fn().mockRejectedValue(error),
+      }),
+    });
+
+    await getSingleProductController(req, res);
+
+    expect(productModel.findOne).toHaveBeenCalledWith({ slug: "test-product" });
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Error retrieving product.",
+      error,
+    });
+  });
+
+  it("should handle case where product is not found", async () => {
+    productModel.findOne.mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue(null),
+      }),
+    });
+
+    await getSingleProductController(req, res);
+
+    expect(productModel.findOne).toHaveBeenCalledWith({ slug: "test-product" });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product fetched successfully.",
+      product: null,
+    });
+  });
+});
