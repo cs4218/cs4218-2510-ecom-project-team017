@@ -470,7 +470,7 @@ describe("Braintree Payment Controller", () => {
 /**
  * Mock dependencies
  */
-jest.mock("../models/productModel");
+jest.mock("../models/productModel.js");
 jest.mock("fs");
 jest.mock("slugify", () =>
   jest.fn((name) => name.toLowerCase().replace(/\s+/g, "-"))
@@ -819,7 +819,9 @@ describe("Update Product Controller", () => {
     await updateProductController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Description is required." });
+    expect(res.send).toHaveBeenCalledWith({
+      error: "Description is required.",
+    });
     expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
@@ -902,3 +904,59 @@ describe("Update Product Controller", () => {
     });
   });
 });
+
+// describe("Delete Product Controller", () => {
+//   let req, res;
+
+//   beforeEach(() => {
+//     req = { params: { pid: "66db427fdb0119d9234b27ed" } };
+//     res = {
+//       status: jest.fn().mockReturnThis(),
+//       send: jest.fn(),
+//     };
+//     jest.clearAllMocks();
+//   });
+
+//   it("should return 200 on successful product deletion", async () => {
+//     productModel.findByIdAndDelete.mockResolvedValue({
+//       _id: "66db427fdb0119d9234b27ed",
+//       name: "Deleted Product",
+//     });
+
+//     await deleteProductController(req, res);
+
+//     expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
+//     expect(res.status).toHaveBeenCalledWith(200);
+//     expect(res.send).toHaveBeenCalledWith({
+//       success: true,
+//       message: "Product deleted successfully.",
+//     });
+//   });
+
+  // it("should return 500 in case of error during product deletion", async () => {
+  //   productModel.findByIdAndDelete.mockRejectedValueOnce(error);
+
+  //   await deleteProductController(req, res);
+
+  //   expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
+  //   expect(res.status).toHaveBeenCalledWith(500);
+  //   expect(res.send).toHaveBeenCalledWith({
+  //     success: false,
+  //     message: "Error deleting product.",
+  //     error: mockErr,
+  //   });
+  // });
+
+  // it("should handle case where product is not found for deletion", async () => {
+  //   productModel.findByIdAndDelete.mockResolvedValue(null);
+
+  //   await deleteProductController(req, res);
+
+  //   expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
+  //   expect(res.status).toHaveBeenCalledWith(200);
+  //   expect(res.send).toHaveBeenCalledWith({
+  //     success: true,
+  //     message: "Product deleted successfully.",
+  //   });
+  // });
+// });
