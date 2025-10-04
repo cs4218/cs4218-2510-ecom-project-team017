@@ -144,3 +144,30 @@ To begin unit testing with Jest in your project, follow these steps:
      ```bash
      npm run test
      ```
+
+### 6. Contributions
+
+### Ren Jing
+
+**Testing & Quality Assurance**
+- Developed comprehensive unit tests for Login, Register, and Forgot Password features using Jest and React Testing Library
+- Implemented Boundary Value Analysis for password validation, ensuring minimum 6-character requirement enforcement
+- Authored integration tests covering complete authentication workflows and error scenarios
+
+**Bug Identification & Resolution**
+- Identified and fixed critical HTTP status code issues in authentication controllers:
+  - **Register Controller**: Fixed 200 status code returned for existing users (changed to proper error code)
+  - **Login Controller**: Corrected 200 status code for invalid password attempts
+- Enhanced user experience by implementing descriptive error messages in toast notifications
+- Discovered and implemented the missing Forgot Password page feature
+
+**Code Quality Improvements**
+- Established robust error handling patterns across all authentication components
+- Implemented loading states and form validation for better user feedback
+- Created maintainable test suites with proper mocking strategies and cleanup
+
+**Testing Methodology**
+- Employed Boundary Value Analysis for password validation testing
+- Implemented Equivalence Partitioning for efficient test coverage
+- Utilized Pairwise Testing for comprehensive input combination coverage
+- Applied State Transition Testing for user workflow validation
