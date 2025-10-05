@@ -276,7 +276,7 @@ export const productListController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.BAD_REQUEST).send({
       success: false,
-      message: "error in per page ctrl",
+      message: "Error retrieving products by page.",
       error,
     });
   }
@@ -306,7 +306,7 @@ export const searchProductController = async (req, res) => {
 };
 
 // get similar products
-export const realtedProductController = async (req, res) => {
+export const relatedProductController = async (req, res) => {
   try {
     const { pid, cid } = req.params;
     const products = await productModel

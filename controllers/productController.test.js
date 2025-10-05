@@ -23,8 +23,28 @@ import productModel from "../models/productModel.js";
 import categoryModel from "../models/categoryModel.js";
 
 /**
- * Mock the Braintree SDK to simulate payment gateway interactions
+ * Mock dependencies
  */
+
+// Mock the Product model
+jest.mock("../models/productModel.js");
+
+// Mock the Category model
+jest.mock("../models/categoryModel.js");
+
+// Mock the Order model
+jest.mock("../models/orderModel", () => {
+  return jest.fn().mockImplementation(() => ({
+    save: jest.fn().mockResolvedValue({ _id: "test-order-id" }),
+  }));
+});
+
+jest.mock("fs");
+jest.mock("slugify", () =>
+  jest.fn((name) => name.toLowerCase().replace(/\s+/g, "-"))
+);
+
+// Mock the Braintree SDK to simulate payment gateway interactions
 jest.mock("braintree", () => {
   const mockTransactionSale = jest.fn();
   const mockTokenGenerate = jest.fn();
@@ -45,15 +65,6 @@ jest.mock("braintree", () => {
     __mockTransactionSale__: mockTransactionSale,
     __mockTokenGenerate__: mockTokenGenerate,
   };
-});
-
-/**
- * Mock the Order model
- */
-jest.mock("../models/orderModel", () => {
-  return jest.fn().mockImplementation(() => ({
-    save: jest.fn().mockResolvedValue({ _id: "test-order-id" }),
-  }));
 });
 
 const mockTransactionSale = braintree.__mockTransactionSale__;
@@ -474,18 +485,7 @@ describe("Braintree Payment Controller", () => {
   });
 });
 
-/**
- * Mock dependencies
- */
-jest.mock("../models/productModel.js");
-jest.mock("../models/categoryModel.js");
-jest.mock("fs");
-jest.mock("slugify", () =>
-  jest.fn((name) => name.toLowerCase().replace(/\s+/g, "-"))
-);
-
 const error = new Error("DB error");
-const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
 describe("Create Product Controller", () => {
   let req, res;
@@ -508,15 +508,11 @@ describe("Create Product Controller", () => {
         },
       },
     };
-
     res = {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
-
-    // Mock fs.readFileSync
     fs.readFileSync.mockReturnValue(Buffer.from("test image data"));
   });
 
@@ -529,7 +525,6 @@ describe("Create Product Controller", () => {
         contentType: "image/jpeg",
       },
     };
-
     productModel.mockImplementation(() => ({
       photo: {
         data: null,
@@ -564,7 +559,6 @@ describe("Create Product Controller", () => {
         contentType: "image/jpeg",
       },
     };
-
     productModel.mockImplementation(() => ({
       photo: {
         data: null,
@@ -637,7 +631,6 @@ describe("Create Product Controller", () => {
         contentType: "image/jpeg",
       },
     };
-
     productModel.mockImplementation(() => ({
       photo: {
         data: null,
@@ -765,15 +758,11 @@ describe("Update Product Controller", () => {
         },
       },
     };
-
     res = {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
-
-    // Mock fs.readFileSync
     fs.readFileSync.mockReturnValue(Buffer.from("updated image data"));
   });
 
@@ -788,7 +777,6 @@ describe("Update Product Controller", () => {
       },
       save: jest.fn().mockResolvedValue(undefined),
     };
-
     productModel.findByIdAndUpdate.mockResolvedValue(updatedProduct);
 
     await updateProductController(req, res);
@@ -899,7 +887,6 @@ describe("Update Product Controller", () => {
       },
       save: jest.fn().mockRejectedValue(new Error("DB error")),
     };
-
     productModel.findByIdAndUpdate.mockResolvedValue(updatedProduct);
 
     await updateProductController(req, res);
@@ -986,12 +973,10 @@ describe("Get Single Product Controller", () => {
         slug: "test-product",
       },
     };
-
     res = {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
   });
 
@@ -1008,7 +993,6 @@ describe("Get Single Product Controller", () => {
       },
       quantity: 10,
     };
-
     productModel.findOne.mockReturnValue({
       select: jest.fn().mockReturnValue({
         populate: jest.fn().mockResolvedValue(product),
@@ -1072,7 +1056,6 @@ describe("Get Product Controller", () => {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
   });
 
@@ -1081,7 +1064,6 @@ describe("Get Product Controller", () => {
       { _id: "p1", name: "Product 1", category: { name: "Category 1" } },
       { _id: "p2", name: "Product 2", category: { name: "Category 2" } },
     ];
-
     productModel.find = jest.fn().mockReturnValue({
       populate: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
@@ -1103,7 +1085,6 @@ describe("Get Product Controller", () => {
 
   it("should return 200 with empty array when no products exist", async () => {
     const products = [];
-
     productModel.find = jest.fn().mockReturnValue({
       populate: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
@@ -1124,13 +1105,12 @@ describe("Get Product Controller", () => {
   });
 
   it("should return 500 in case of error", async () => {
-    const dbError = new Error("Database connection error");
-
+    const error = new Error("DB error");
     productModel.find = jest.fn().mockReturnValue({
       populate: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
-      sort: jest.fn().mockRejectedValue(dbError),
+      sort: jest.fn().mockRejectedValue(error),
     });
 
     await getProductController(req, res);
@@ -1139,7 +1119,7 @@ describe("Get Product Controller", () => {
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Error retrieving products.",
-      error: dbError.message,
+      error: error.message,
     });
   });
 });
@@ -1154,24 +1134,20 @@ describe("Product Filters Controller", () => {
         radio: [],
       },
     };
-
     res = {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
   });
 
   it("should return 200 with filtered products by category", async () => {
     const categories = ["66db427fdb0119d9234b27ed", "66db427fdb0119d9234b27ee"];
     req.body.checked = categories;
-
     const products = [
       { _id: "p1", name: "Product 1", category: categories[0] },
       { _id: "p2", name: "Product 2", category: categories[1] },
     ];
-
     productModel.find.mockResolvedValue(products);
 
     await productFiltersController(req, res);
@@ -1187,12 +1163,10 @@ describe("Product Filters Controller", () => {
   it("should return 200 with filtered products by price range", async () => {
     const priceRange = [20, 100];
     req.body.radio = priceRange;
-
     const products = [
       { _id: "p1", name: "Product 1", price: 25 },
       { _id: "p2", name: "Product 2", price: 75 },
     ];
-
     productModel.find.mockResolvedValue(products);
 
     await productFiltersController(req, res);
@@ -1210,14 +1184,11 @@ describe("Product Filters Controller", () => {
   it("should return 200 with filtered products by both category and price range", async () => {
     const categories = ["66db427fdb0119d9234b27ed"];
     const priceRange = [20, 100];
-
     req.body.checked = categories;
     req.body.radio = priceRange;
-
     const products = [
       { _id: "p1", name: "Product 1", category: categories[0], price: 25 },
     ];
-
     productModel.find.mockResolvedValue(products);
 
     await productFiltersController(req, res);
@@ -1235,7 +1206,6 @@ describe("Product Filters Controller", () => {
 
   it("should return 400 in case of error during filtering", async () => {
     req.body.checked = ["66db427fdb0119d9234b27ed"];
-
     productModel.find.mockRejectedValue(new Error("DB error"));
 
     await productFiltersController(req, res);
@@ -1253,7 +1223,6 @@ describe("Product Filters Controller", () => {
       { _id: "p1", name: "Product 1" },
       { _id: "p2", name: "Product 2" },
     ];
-
     productModel.find.mockResolvedValue(products);
 
     await productFiltersController(req, res);
@@ -1290,12 +1259,10 @@ describe("Product Category Controller", () => {
       name: "Category 1",
       slug: "category-1",
     };
-
     const products = [
       { _id: "p1", name: "Product 1", category },
       { _id: "p2", name: "Product 2", category },
     ];
-
     categoryModel.findOne = jest.fn().mockResolvedValue(category);
     productModel.find = jest.fn().mockReturnValue({
       populate: jest.fn().mockResolvedValue(products),
@@ -1323,9 +1290,7 @@ describe("Product Category Controller", () => {
       name: "Category 1",
       slug: "category-1",
     };
-
     const products = [];
-
     categoryModel.findOne = jest.fn().mockResolvedValue(category);
     productModel.find = jest.fn().mockReturnValue({
       populate: jest.fn().mockResolvedValue(products),
@@ -1349,7 +1314,6 @@ describe("Product Category Controller", () => {
 
   it("should handle case when category does not exist", async () => {
     const category = null;
-
     categoryModel.findOne = jest.fn().mockResolvedValue(category);
     productModel.find = jest.fn().mockReturnValue({
       populate: jest.fn().mockResolvedValue([]),
@@ -1369,9 +1333,9 @@ describe("Product Category Controller", () => {
   });
 
   it("should return 400 in case of error", async () => {
-    const dbError = new Error("DB error");
+    const error = new Error("DB error");
 
-    categoryModel.findOne = jest.fn().mockRejectedValue(dbError);
+    categoryModel.findOne = jest.fn().mockRejectedValue(error);
 
     await productCategoryController(req, res);
 
@@ -1381,7 +1345,7 @@ describe("Product Category Controller", () => {
     expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
-      error: dbError,
+      error: error,
       message: "Error retrieving products by category.",
     });
   });
@@ -1401,7 +1365,6 @@ describe("Product Photo Controller", () => {
       set: jest.fn(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
   });
 
@@ -1413,7 +1376,6 @@ describe("Product Photo Controller", () => {
         contentType: "image/jpeg",
       },
     };
-
     productModel.findById = jest.fn().mockReturnValue({
       select: jest.fn().mockResolvedValue(product),
     });
@@ -1433,7 +1395,6 @@ describe("Product Photo Controller", () => {
         contentType: "image/jpeg",
       },
     };
-
     productModel.findById = jest.fn().mockReturnValue({
       select: jest.fn().mockResolvedValue(product),
     });
@@ -1447,7 +1408,6 @@ describe("Product Photo Controller", () => {
 
   it("should return 500 in case of error", async () => {
     const dbError = new Error("DB error");
-
     productModel.findById = jest.fn().mockReturnValue({
       select: jest.fn().mockRejectedValue(dbError),
     });
@@ -1473,13 +1433,11 @@ describe("Product Count Controller", () => {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
   });
 
   it("should return 200 with the total product count", async () => {
     const total = 10;
-
     productModel.find = jest.fn().mockReturnValue({
       estimatedDocumentCount: jest.fn().mockResolvedValue(total),
     });
@@ -1496,7 +1454,6 @@ describe("Product Count Controller", () => {
 
   it("should return 0 when no products exist", async () => {
     const total = 0;
-
     productModel.find = jest.fn().mockReturnValue({
       estimatedDocumentCount: jest.fn().mockResolvedValue(total),
     });
@@ -1512,10 +1469,10 @@ describe("Product Count Controller", () => {
   });
 
   it("should return 400 in case of error", async () => {
-    const dbError = new Error("DB error");
+    const error = new Error("DB error");
 
     productModel.find = jest.fn().mockReturnValue({
-      estimatedDocumentCount: jest.fn().mockRejectedValue(dbError),
+      estimatedDocumentCount: jest.fn().mockRejectedValue(error),
     });
 
     await productCountController(req, res);
@@ -1524,7 +1481,7 @@ describe("Product Count Controller", () => {
     expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({
       message: "Error retrieving product count.",
-      error: dbError,
+      error: error,
       success: false,
     });
   });
@@ -1541,7 +1498,6 @@ describe("Product List Controller", () => {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
   });
 
@@ -1554,7 +1510,6 @@ describe("Product List Controller", () => {
       { _id: "p5", name: "Product 5" },
       { _id: "p6", name: "Product 6" },
     ];
-
     productModel.find = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
@@ -1603,7 +1558,6 @@ describe("Product List Controller", () => {
   it("should return 200 with empty array when no products exist for a page", async () => {
     req.params.page = "10";
     const products = [];
-
     productModel.find = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
@@ -1657,7 +1611,6 @@ describe("Related Product Controller", () => {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
   });
 
@@ -1689,7 +1642,6 @@ describe("Related Product Controller", () => {
 
   it("should return 200 with empty array when no related products exist", async () => {
     const products = [];
-
     productModel.find = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
@@ -1710,12 +1662,11 @@ describe("Related Product Controller", () => {
   });
 
   it("should return 400 in case of error", async () => {
-    const dbError = new Error("DB error");
-
+    const error = new Error("DB error");
     productModel.find = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
-      populate: jest.fn().mockRejectedValue(dbError),
+      populate: jest.fn().mockRejectedValue(error),
     });
 
     await relatedProductController(req, res);
@@ -1728,7 +1679,7 @@ describe("Related Product Controller", () => {
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Error retrieving related products.",
-      error: dbError,
+      error: error,
     });
   });
 });
@@ -1742,13 +1693,11 @@ describe("Search Product Controller", () => {
         keyword: "test",
       },
     };
-
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
       send: jest.fn(),
     };
-
     jest.clearAllMocks();
   });
 
@@ -1757,7 +1706,6 @@ describe("Search Product Controller", () => {
       { _id: "p1", name: "Test Product", description: "Normal description" },
       { _id: "p2", name: "Another Product", description: "Test description" },
     ];
-
     productModel.find.mockReturnValue({
       select: jest.fn().mockResolvedValue(products),
     });
@@ -1806,7 +1754,6 @@ describe("Search Product Controller", () => {
 
   it("should handle special characters in search keyword", async () => {
     req.params.keyword = "special+chars?";
-
     const products = [
       {
         _id: "p1",
@@ -1814,7 +1761,6 @@ describe("Search Product Controller", () => {
         description: "Description",
       },
     ];
-
     productModel.find.mockReturnValue({
       select: jest.fn().mockResolvedValue(products),
     });
