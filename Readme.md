@@ -213,3 +213,27 @@ To begin unit testing with Jest in your project, follow these steps:
 
 - Employed Equivalence Partitioning for category naming validation testing
 - Utilized Pairwise Testing for comprehensive input combination coverage
+
+### Ruth Lim
+
+**Testing & Quality Assurance**
+
+- Wrote comprehensive unit tests for payment gateway and order management related features using Jest
+- Implemented thorough input validation testing for cart items, prices, order IDs, and status values to cover success and error branches
+
+**Bug Identification & Resolution**
+
+- Added input validations for payment controller
+- Removed password hash from profile update responses to prevent sensitive data exposure
+- Fixed timestamp field (createAt to createdAt) which affected date display
+
+**Code Quality Improvements**
+
+- Standardized error handling and response messages in controllers
+- Kept tests concise and readable with Arrange–Act–Assert structure, and targeted assertions
+
+**Testing Methodology**
+
+- Utilized equivalence partitioning for price validation testing (negative, zero, positive, non-numeric values)
+- Conducted edge case analysis including null/undefined handling, empty arrays, and missing properties
+- Implemented error path coverage ensuring all catch blocks and exception handlers are tested
