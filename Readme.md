@@ -151,14 +151,14 @@ To begin unit testing with Jest in your project, follow these steps:
 
 ### Team Member Contributions (MS1)
 
-| Assignee              | Features                                | Client Related Files (/client/src)                                                                                                                            | Server Related Files (./)                                                                                                                                                                                                                                                                                                                                                                                     |     |
-| --------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| Tee Ren Jing          | Protected Routes + Registration + Login | `context/auth.js` <br> `pages/Auth/Register.js` <br> `pages/Auth/Login.js`                                                                                    | `helpers/authHelper.js` <br>`middlewares/authMiddleware.js` <br>`controllers/authController.js`<br> - registerController <br> - loginController<br> - forgotPasswordController<br> - testController                                                                                                                                                                                                           |     |
-| Ruth Lim Sze Ern      | Order + Payment                         | `pages/user/Orders.js`                                                                                                                                        | `controllers/authController.js`<br> - updateProfileController<br> - getOrdersController<br> - getAllOrdersController<br> - orderStatusController<br> `controllers/productController.js`<br> - braintreeTokenController<br> - braintreePaymentController                                                                                                                                                       |     |
-| He Ruoqing,Vivien     | Product                                 | `pages/ProductDetails.js` <br> `pages/CategoryProduct.js`<br> `pages/admin/CreateProduct.js`<br> `pages/admin/UpdateProduct.js`<br> `pages/admin/Products.js` | `controllers/productController.js` <br> - createProductController <br> - updateProductController <br> - deleteProductController<br> - getSingleProductController<br> - getProductController<br> - productFiltersController <br>- productCategoryController <br>- productPhotoController<br> - productCountController<br> - productListController <br>- relatedProductController <br>- searchProductController |     |
-| Tang Jia Ning Caitlyn | Category                                | `hooks/useCategory.js` <br> `pages/Categories.js`<br> `components/Form/CategoryForm.js`<br> `pages/admin/CreateCategory.js`                                   | `controllers/categoryController.js` <br> - createCategoryController <br> - updateCategoryController <br> - categoryController <br> - singleCategoryController <br> - deleteCategoryController                                                                                                                                                                                                                 |     |
+| Assignee              | Features                                | Client Related Files (/client/src)                                                                                                                            | Server Related Files (./)                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tee Ren Jing          | Protected Routes + Registration + Login | `context/auth.js` <br> `pages/Auth/Register.js` <br> `pages/Auth/Login.js`                                                                                    | `helpers/authHelper.js` <br>`middlewares/authMiddleware.js` <br>`controllers/authController.js`<br> - registerController <br> - loginController<br> - forgotPasswordController<br> - testController                                                                                                                                                                                                                                         |
+| Ruth Lim Sze Ern      | Order + Payment                         | `pages/user/Orders.js`                                                                                                                                        | `controllers/authController.js`<br> - updateProfileController<br> - getOrdersController<br> - getAllOrdersController<br> - orderStatusController<br> `controllers/productController.js`<br> - braintreeTokenController<br> - braintreePaymentController                                                                                                                                                                                     |
+| He Ruoqing, Vivien     | Product                                 | `pages/ProductDetails.js` <br> `pages/CategoryProduct.js`<br> `pages/admin/CreateProduct.js`<br> `pages/admin/UpdateProduct.js`<br> `pages/admin/Products.js` | `controllers/productController.js` <br> - createProductController <br> - updateProductController <br> - deleteProductController<br> - getSingleProductController<br> - getProductController<br> - productFiltersController <br>- productCategoryController <br>- productPhotoController<br> - productCountController<br> - productListController <br>- relatedProductController <br>- searchProductController <br> `models/productModel.js` |
+| Tang Jia Ning Caitlyn | Category                                | `hooks/useCategory.js` <br> `pages/Categories.js`<br> `components/Form/CategoryForm.js`<br> `pages/admin/CreateCategory.js`                                   | `controllers/categoryController.js` <br> - createCategoryController <br> - updateCategoryController <br> - categoryController <br> - singleCategoryController <br> - deleteCategoryController                                                                                                                                                                                                                                               |
 
-We would like to give credit to AI in helping to generate some of the test cases. 
+We would like to give credit to AI in helping to generate some of the test cases.
 
 ### Ren Jing
 
@@ -239,3 +239,31 @@ We would like to give credit to AI in helping to generate some of the test cases
 - Utilized equivalence partitioning for price validation testing (negative, zero, positive, non-numeric values)
 - Conducted edge case analysis including null/undefined handling, empty arrays, and missing properties
 - Implemented error path coverage ensuring all catch blocks and exception handlers are tested
+
+### Vivien He
+
+**Testing & Quality Assurance**
+
+- Developed comprehensive unit tests for product-related features, components and pages using Jest and React Testing Library
+- Simulated frontend-backend workflows by mocking Axios requests for product creation, update, and deletion routes
+- Verified correct rendering of form components, loading states, and toast feedback under success and error scenarios, for CRUD operations
+
+**Bug Identification & Resolution**
+
+- Identified and resolved critical logic issues and response inconsistencies:
+  - `controllers/productController.js`: replaced incorrect HTTP status codes with proper ones and standardized response formatting for consistent API behavior
+  - `pages/admin/createProduct.js` & `pages/admin/updateProduct.js`: corrected success and error feedback logic to ensure accurate user-facing messages for each API outcome
+
+**Code Quality Improvements**
+
+- Adopted the http-status-codes package for standardised response mapping across all controllers
+- Implemented consistent error-handling patterns and standardised response structures across controllers for consistent API behavior
+- Created maintainable test suites following the Arrange–Act–Assert (AAA) pattern for clarity and readability
+- Caught and resolved trivial bugs, standardised phrasing and toast messages across components to ensure uniform user experience and message clarity
+
+**Testing Methodology**
+
+- Applied Equivalence Partitioning on both input (request parameters) and output (HTTP status codes, response payloads) when testing all controller functions and components
+- Applied output-based testing and state-based testing, verifying that error codes, response data, and object states (e.g., updated product details) accurately reflected expected outcomes
+- Guided by Control Flow Testing principles to achieve branch-level coverage across controller logic, particularly testing both success and failure branches
+- Utilised mocking techniques (Axios and Mongoose) to simulate backend communication, enabling reliable testing of frontend–backend interactions without relying on live servers
