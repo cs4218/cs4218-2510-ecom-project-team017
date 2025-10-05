@@ -127,6 +127,7 @@ const UpdateProduct = () => {
             <div className="m-1 w-75">
               <Select
                 variant={false}
+                aria-label="category"
                 placeholder="Select a category"
                 size="large"
                 showSearch
@@ -198,7 +199,7 @@ const UpdateProduct = () => {
                 <input
                   type="number"
                   value={price}
-                  placeholder="write a Price"
+                  placeholder="write a price"
                   className="form-control"
                   onChange={(e) => setPrice(e.target.value)}
                 />
@@ -215,6 +216,7 @@ const UpdateProduct = () => {
               <div className="mb-3">
                 <Select
                   variant={false}
+                  aria-label="shipping"
                   placeholder="Select Shipping "
                   size="large"
                   showSearch
