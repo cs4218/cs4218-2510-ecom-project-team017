@@ -18,15 +18,6 @@ jest.mock("../models/userModel");
 jest.mock("../models/orderModel");
 jest.mock("../helpers/authHelper");
 jest.mock("jsonwebtoken");
-jest.mock("../constants/orderConstants.js", () => ({
-  ORDER_STATUS_OPTIONS: [
-    "Not Processed",
-    "Processing",
-    "Shipped",
-    "Delivered",
-    "Cancelled",
-  ],
-}));
 
 describe("Auth Controllers - Basic Unit Tests", () => {
   let req, res;
