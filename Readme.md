@@ -158,6 +158,8 @@ To begin unit testing with Jest in your project, follow these steps:
 | He Ruoqing,Vivien     | Product                                 | `pages/ProductDetails.js` <br> `pages/CategoryProduct.js`<br> `pages/admin/CreateProduct.js`<br> `pages/admin/UpdateProduct.js`<br> `pages/admin/Products.js` | `controllers/productController.js` <br> - createProductController <br> - updateProductController <br> - deleteProductController<br> - getSingleProductController<br> - getProductController<br> - productFiltersController <br>- productCategoryController <br>- productPhotoController<br> - productCountController<br> - productListController <br>- relatedProductController <br>- searchProductController |     |
 | Tang Jia Ning Caitlyn | Category                                | `hooks/useCategory.js` <br> `pages/Categories.js`<br> `components/Form/CategoryForm.js`<br> `pages/admin/CreateCategory.js`                                   | `controllers/categoryController.js` <br> - createCategoryController <br> - updateCategoryController <br> - categoryController <br> - singleCategoryController <br> - deleteCategoryController                                                                                                                                                                                                                 |     |
 
+We would like to give credit to AI in helping to generate some of the test cases. 
+
 ### Ren Jing
 
 **Testing & Quality Assurance**
