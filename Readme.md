@@ -147,14 +147,27 @@ To begin unit testing with Jest in your project, follow these steps:
 
 ### 6. Contributions
 
+[Link to CI](https://github.com/cs4218/cs4218-2510-ecom-project-team017/actions/runs/17571897740)
+
+### Team Member Contributions (MS1)
+
+| Assignee              | Features                                | Client Related Files (/client/src)                                                                                                                            | Server Related Files (./)                                                                                                                                                                                                                                                                                                                                                                                     |     |
+| --------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Tee Ren Jing          | Protected Routes + Registration + Login | `context/auth.js` <br> `pages/Auth/Register.js` <br> `pages/Auth/Login.js`                                                                                    | `helpers/authHelper.js` <br>`middlewares/authMiddleware.js` <br>`controllers/authController.js`<br> - registerController <br> - loginController<br> - forgotPasswordController<br> - testController                                                                                                                                                                                                           |     |
+| Ruth Lim Sze Ern      | Order + Payment                         | `pages/user/Orders.js`                                                                                                                                        | `controllers/authController.js`<br> - updateProfileController<br> - getOrdersController<br> - getAllOrdersController<br> - orderStatusController<br> `controllers/productController.js`<br> - braintreeTokenController<br> - braintreePaymentController                                                                                                                                                       |     |
+| He Ruoqing,Vivien     | Product                                 | `pages/ProductDetails.js` <br> `pages/CategoryProduct.js`<br> `pages/admin/CreateProduct.js`<br> `pages/admin/UpdateProduct.js`<br> `pages/admin/Products.js` | `controllers/productController.js` <br> - createProductController <br> - updateProductController <br> - deleteProductController<br> - getSingleProductController<br> - getProductController<br> - productFiltersController <br>- productCategoryController <br>- productPhotoController<br> - productCountController<br> - productListController <br>- relatedProductController <br>- searchProductController |     |
+| Tang Jia Ning Caitlyn | Category                                | `hooks/useCategory.js` <br> `pages/Categories.js`<br> `components/Form/CategoryForm.js`<br> `pages/admin/CreateCategory.js`                                   | `controllers/categoryController.js` <br> - createCategoryController <br> - updateCategoryController <br> - categoryController <br> - singleCategoryController <br> - deleteCategoryController                                                                                                                                                                                                                 |     |
+
 ### Ren Jing
 
 **Testing & Quality Assurance**
+
 - Developed comprehensive unit tests for Login, Register, and Forgot Password features using Jest and React Testing Library
 - Implemented Boundary Value Analysis for password validation, ensuring minimum 6-character requirement enforcement
 - Authored integration tests covering complete authentication workflows and error scenarios
 
 **Bug Identification & Resolution**
+
 - Identified and fixed critical HTTP status code issues in authentication controllers:
   - **Register Controller**: Fixed 200 status code returned for existing users (changed to proper error code)
   - **Login Controller**: Corrected 200 status code for invalid password attempts
@@ -162,11 +175,13 @@ To begin unit testing with Jest in your project, follow these steps:
 - Discovered and implemented the missing Forgot Password page feature
 
 **Code Quality Improvements**
+
 - Established robust error handling patterns across all authentication components
 - Implemented loading states and form validation for better user feedback
 - Created maintainable test suites with proper mocking strategies and cleanup
 
 **Testing Methodology**
+
 - Employed Boundary Value Analysis for password validation testing
 - Implemented Equivalence Partitioning for efficient test coverage
 - Utilized Pairwise Testing for comprehensive input combination coverage
@@ -175,22 +190,50 @@ To begin unit testing with Jest in your project, follow these steps:
 ### Caitlyn Tang
 
 **Testing & Quality Assurance**
+
 - Developed comprehensive unit tests for Category related features using Jest and React Testing Library
 - Authored integration tests covering complete category related workflows and error scenarios
 
 **Bug Identification & Resolution**
+
 - Identified and fixed critical code issues in the category controller:
   - **Create Category Controller**:
-      - Fixed 401 status code returned for invalid request (changed to error code 400)
-      - Fixed invalid variable call
+    - Fixed 401 status code returned for invalid request (changed to error code 400)
+    - Fixed invalid variable call
 - Enhanced user experience by correcting spelling errors found in toast notifications and return messages
 - Removed unused fragment in CreateCategory.js categories table
 - Implemented input validation of category names
 
 **Code Quality Improvements**
+
 - Created maintainable test suites with proper mocking strategies and cleanup
-- Corrected code styling errors found for better readability and maintenance 
+- Corrected code styling errors found for better readability and maintenance
 
 **Testing Methodology**
+
 - Employed Equivalence Partitioning for category naming validation testing
 - Utilized Pairwise Testing for comprehensive input combination coverage
+
+### Ruth Lim
+
+**Testing & Quality Assurance**
+
+- Wrote comprehensive unit tests for payment gateway and order management related features using Jest
+- Implemented thorough input validation testing for cart items, prices, order IDs, and status values to cover success and error branches
+
+**Bug Identification & Resolution**
+
+- Added input validations for payment controller
+- Removed password hash from profile update responses to prevent sensitive data exposure
+- Fixed timestamp field (createAt to createdAt) which affected date display
+
+**Code Quality Improvements**
+
+- Standardized error handling and response messages in controllers
+- Kept tests concise and readable with Arrange–Act–Assert structure, and targeted assertions
+
+**Testing Methodology**
+
+- Utilized equivalence partitioning for price validation testing (negative, zero, positive, non-numeric values)
+- Conducted edge case analysis including null/undefined handling, empty arrays, and missing properties
+- Implemented error path coverage ensuring all catch blocks and exception handlers are tested
