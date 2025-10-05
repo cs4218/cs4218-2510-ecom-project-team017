@@ -11,6 +11,9 @@ const CategoryForm = ({ handleSubmit, value, setValue }) => {
             placeholder="Enter new category"
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            minLength="1"
+            maxLength="255"
+            required
           />
         </div>
 

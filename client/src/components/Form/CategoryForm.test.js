@@ -1,18 +1,22 @@
 import '@testing-library/jest-dom/extend-expect';
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import CategoryForm from './CategoryForm.js';
 
 // Stub and mock input constraints
 var testValue = '';
-const handleSubmit = jest.fn((e) => { 
+const handleSubmit = jest.fn((e) => {
     e.preventDefault();
 });
 
 const setValue = jest.fn();
 
 describe('Create New Category Form', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
     it('renders category form', () => {
         const { getByPlaceholderText } = render(
             <MemoryRouter initialEntries={['/dashboard/admin/create-category']}>

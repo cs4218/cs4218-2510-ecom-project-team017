@@ -3,9 +3,17 @@ import axios from "axios";
 import React from 'react';
 import { waitFor, renderHook } from '@testing-library/react';
 import useCategory from './useCategory.js';
-import { beforeEach } from 'node:test';
 
 jest.mock('axios');
+const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+const mockCategories = [
+    {
+        "_id": "66db427fdb0119d9234b27ef",
+        "name": "Book",
+        "slug": "book",
+        "__v": 0
+    }
+];
 
 describe('try get categories', () => {
     beforeEach(() => {
@@ -16,16 +24,7 @@ describe('try get categories', () => {
 
         axios.get.mockResolvedValueOnce({
             data: {
-                success: true,
-                message: "All Categories List",
-                category: [
-                    {
-                        "_id": "66db427fdb0119d9234b27ef",
-                        "name": "Book",
-                        "slug": "book",
-                        "__v": 0
-                    }
-                ]
+                category: mockCategories
             }
         });
 
@@ -36,7 +35,6 @@ describe('try get categories', () => {
     });
 
     it('unsuccessful invocation of get categories api', async () => {
-        const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
         axios.get.mockRejectedValueOnce(new Error('API error'));
 
         const { result } = renderHook(() => useCategory());
@@ -44,5 +42,29 @@ describe('try get categories', () => {
         await waitFor(() => expect(axios.get).toHaveBeenCalled());
         expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
         expect(logSpy).toHaveBeenCalled();
+    });
+
+    it('should update the category state upon successful invocation of api', async () => {
+        axios.get.mockResolvedValueOnce({
+            data: {
+                category: mockCategories
+            }
+        });
+
+        const { result } = renderHook(() => useCategory());
+
+        await waitFor(() => {
+            expect(result.current).toEqual(mockCategories);
+        });
+    });
+
+    it('should not update the category state upon unsuccessful invocation of api', async () => {
+        axios.get.mockRejectedValueOnce(new Error('API error'));
+
+        const { result } = renderHook(() => useCategory());
+
+        await waitFor(() => {
+            expect(result.current).toEqual([]);
+        });
     });
 });
