@@ -1,5 +1,7 @@
 # CS4218 Project - Virtual Vault
 
+[Link to CI](https://github.com/cs4218/cs4218-2510-ecom-project-team017/actions/runs/17571897740/job/49909481600)
+
 ## 1. Project Introduction
 
 Virtual Vault is a full-stack MERN (MongoDB, Express.js, React.js, Node.js) e-commerce website, offering seamless connectivity and user-friendly features. The platform provides a robust framework for online shopping. The website is designed to adapt to evolving business needs and can be efficiently extended.
@@ -147,8 +149,6 @@ To begin unit testing with Jest in your project, follow these steps:
 
 ### 6. Contributions
 
-[Link to CI](https://github.com/cs4218/cs4218-2510-ecom-project-team017/actions/runs/17571897740/job/49909481600)
-
 ### Team Member Contributions (MS1)
 
 | Assignee              | Features                                | Client Related Files (/client/src)                                                                                                                            | Server Related Files (./)                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -251,7 +251,7 @@ We would like to give credit to AI in helping to generate some of the test cases
 **Bug Identification & Resolution**
 
 - Identified and resolved critical logic issues and response inconsistencies:
-  - `controllers/productController.js`: replaced incorrect HTTP status codes with proper ones and standardized response formatting for consistent API behavior
+  - `controllers/productController.js`: replaced incorrect HTTP status codes with proper ones, standardized response formatting for consistent API behavior, and added handling for cases where the target object (e.g., product) does not exist
   - `pages/admin/createProduct.js` & `pages/admin/updateProduct.js`: corrected success and error feedback logic to ensure accurate user-facing messages for each API outcome
 
 **Code Quality Improvements**
