@@ -57,7 +57,6 @@ describe("ProductDetails Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Mock useParams to return a slug
     useParams.mockReturnValue({ slug: "test-product" });
 
     // Mock axios.get for product data
@@ -90,12 +89,12 @@ describe("ProductDetails Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(
         "/api/v1/product/get-product/test-product"
       );
     });
+
     // Check if product details are displayed
     expect(await screen.findByText("Product Details")).toBeInTheDocument();
     expect(await screen.findByText("Name : Test Product")).toBeInTheDocument();
@@ -140,13 +139,13 @@ describe("ProductDetails Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(
         "/api/v1/product/get-product/test-product"
       );
     });
-    // Wait for the related products call to complete and check for empty state message
+
+    // Check for empty state message
     expect(screen.getByText("No Similar Products found")).toBeInTheDocument();
   });
 
@@ -162,17 +161,16 @@ describe("ProductDetails Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(
         "/api/v1/product/get-product/test-product"
       );
     });
-    // Check that error was logged
+
+    // Check error handling
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
     });
-
     consoleSpy.mockRestore();
   });
 

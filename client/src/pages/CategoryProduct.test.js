@@ -2,13 +2,7 @@ import "@testing-library/jest-dom/extend-expect";
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import axios from "axios";
-import {
-  MemoryRouter,
-  Routes,
-  Route,
-  useParams,
-  useNavigate,
-} from "react-router-dom";
+import { MemoryRouter, Routes, Route, useParams } from "react-router-dom";
 import CategoryProduct from "./CategoryProduct";
 
 // Mock axios
@@ -60,7 +54,6 @@ describe("CategoryProduct Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Mock useParams to return a category slug
     useParams.mockReturnValue({ slug: "electronics" });
 
     // Mock axios.get for category products
@@ -82,14 +75,16 @@ describe("CategoryProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(
         "/api/v1/product/product-category/electronics"
       );
     });
+
     // Check if category is displayed
-    expect(await screen.findByText("Category - Electronics")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Category - Electronics")
+    ).toBeInTheDocument();
     expect(await screen.findByText("2 result found")).toBeInTheDocument();
     // Check if products are displayed
     expect(screen.getByText("Product 1")).toBeInTheDocument();
@@ -131,8 +126,11 @@ describe("CategoryProduct Component", () => {
         "/api/v1/product/product-category/electronics"
       );
     });
+
     // Check for empty results message
-    expect(await screen.findByText("Category - Electronics")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Category - Electronics")
+    ).toBeInTheDocument();
     expect(await screen.findByText("0 result found")).toBeInTheDocument();
   });
 
@@ -147,13 +145,14 @@ describe("CategoryProduct Component", () => {
         </Routes>
       </MemoryRouter>
     );
-    // Check that API was called
+
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(
         "/api/v1/product/product-category/electronics"
       );
     });
-    // Check that error was logged
+
+    // Check error handling
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
     });

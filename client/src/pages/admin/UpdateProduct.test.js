@@ -77,7 +77,6 @@ describe("UpdateProduct Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Set up mocks
     useParams.mockReturnValue({ slug: "test-product" });
     useNavigate.mockReturnValue(navigateMock);
 
@@ -128,7 +127,9 @@ describe("UpdateProduct Component", () => {
     expect(screen.getByTestId("admin-menu")).toBeInTheDocument();
     // Check form elements for data
     expect(await screen.findByDisplayValue("Test Product")).toBeInTheDocument();
-    expect(await screen.findByDisplayValue("Test Description")).toBeInTheDocument();
+    expect(
+      await screen.findByDisplayValue("Test Description")
+    ).toBeInTheDocument();
     expect(await screen.findByDisplayValue("99.99")).toBeInTheDocument();
     expect(await screen.findByDisplayValue("10")).toBeInTheDocument();
     // Check for buttons
@@ -163,7 +164,7 @@ describe("UpdateProduct Component", () => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
     });
 
-    // Update product name
+    // Update product
     fireEvent.change(await screen.findByDisplayValue("Test Product"), {
       target: { value: "Updated Product Name" },
     });
@@ -209,7 +210,7 @@ describe("UpdateProduct Component", () => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
     });
 
-    // Click update button
+    // Update product
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
     // Check error handling
@@ -264,7 +265,9 @@ describe("UpdateProduct Component", () => {
       );
     });
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Product deleted successfully.");
+      expect(toast.success).toHaveBeenCalledWith(
+        "Product deleted successfully."
+      );
     });
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith("/dashboard/admin/products");

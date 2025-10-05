@@ -70,10 +70,10 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
     });
+
     // Check for title and admin menu
     expect(screen.getByText("Create Product")).toBeInTheDocument();
     expect(screen.getByTestId("admin-menu")).toBeInTheDocument();
@@ -103,11 +103,10 @@ describe("CreateProduct Component", () => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
     });
 
-    // Check that error was logged
+    // Check error handling
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalled();
     });
-    // Check that toast was triggered
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Couldn’t load categories.");
     });
@@ -126,28 +125,25 @@ describe("CreateProduct Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
     });
+
     // Fill in form
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "Test Product" },
     });
-
     fireEvent.change(screen.getByPlaceholderText("write a description"), {
       target: { value: "Test Description" },
     });
-
     fireEvent.change(screen.getByPlaceholderText("write a price"), {
       target: { value: "99.99" },
     });
-
     fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
       target: { value: "10" },
     });
 
-    // Submit form
+    // Create product (submit form)
     fireEvent.click(screen.getByText("CREATE PRODUCT"));
 
     // Check if form submission works
@@ -180,14 +176,13 @@ describe("CreateProduct Component", () => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
     });
 
-    // Submit form
+    // Create product (submit form)
     fireEvent.click(screen.getByText("CREATE PRODUCT"));
 
-    // Check that error was logged
+    // Check error handling
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalled();
     });
-    // Check that toast was triggered
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Couldn’t create product.");
     });
@@ -209,6 +204,7 @@ describe("CreateProduct Component", () => {
     const fileInput = screen.getByLabelText("Upload photo");
     fireEvent.change(fileInput, { target: { files: [file] } });
 
+    // Check that file upload works
     expect(screen.getByText("test.png")).toBeInTheDocument();
     expect(global.URL.createObjectURL).toHaveBeenCalledWith(file);
   });

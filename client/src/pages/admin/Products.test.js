@@ -52,26 +52,6 @@ const mockProducts = [
 ];
 
 describe("Products Component", () => {
-  // Mock products data
-  //   const mockProducts = [
-  //     {
-  //       _id: "prod123",
-  //       name: "Product 1",
-  //       description: "Product 1 Description",
-  //       price: 99.99,
-  //       slug: "product-1",
-  //       category: { _id: "cat1", name: "Electronics" },
-  //     },
-  //     {
-  //       _id: "prod456",
-  //       name: "Product 2",
-  //       description: "Product 2 Description",
-  //       price: 89.99,
-  //       slug: "product-2",
-  //       category: { _id: "cat2", name: "Clothing" },
-  //     },
-  //   ];
-
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -91,10 +71,10 @@ describe("Products Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/product/get-product");
     });
+
     // Check title and admin menu
     expect(screen.getByText("All Products List")).toBeInTheDocument();
     expect(screen.getByTestId("admin-menu")).toBeInTheDocument();
@@ -107,7 +87,7 @@ describe("Products Component", () => {
     expect(
       await screen.findByText("Product 2 Description")
     ).toBeInTheDocument();
-    // Check for product links (need to check attributes as Link components are mocked)
+    // Check product links
     const links = screen.getAllByRole("link");
     expect(links[0]).toHaveAttribute(
       "href",
@@ -133,10 +113,10 @@ describe("Products Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/product/get-product");
     });
+
     // Check if admin menu is still displayed
     expect(screen.getByTestId("admin-menu")).toBeInTheDocument();
     expect(screen.getByText("All Products List")).toBeInTheDocument();
@@ -155,15 +135,15 @@ describe("Products Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/product/get-product");
     });
+
     // Check that error was logged
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalled();
     });
-    // Check that toast was trigger
+    // Check that toast was triggered
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Something Went Wrong");
     });
@@ -176,10 +156,10 @@ describe("Products Component", () => {
       </MemoryRouter>
     );
 
-    // Check that API was called
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith("/api/v1/product/get-product");
     });
+
     // Check for correct image sources
     const img1 = await screen.findByAltText("Product 1");
     expect(img1).toHaveAttribute(

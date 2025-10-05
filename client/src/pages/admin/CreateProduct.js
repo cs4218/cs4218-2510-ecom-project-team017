@@ -9,6 +9,7 @@ const { Option } = Select;
 
 const CreateProduct = () => {
   const navigate = useNavigate();
+
   const [categories, setCategories] = useState([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -18,7 +19,7 @@ const CreateProduct = () => {
   const [shipping, setShipping] = useState("");
   const [photo, setPhoto] = useState("");
 
-  //get all category
+  // get all categories
   const getAllCategory = async () => {
     try {
       const { data } = await axios.get("/api/v1/category/get-category");
@@ -35,7 +36,7 @@ const CreateProduct = () => {
     getAllCategory();
   }, []);
 
-  //create product function
+  // create product function
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
