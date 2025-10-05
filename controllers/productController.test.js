@@ -548,60 +548,59 @@ describe("Create Product Controller", () => {
     });
   });
 
-  it("should return 500 if name is missing", async () => {
+  it("should return 400 if name is missing", async () => {
     req.fields.name = "";
 
     await createProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({ error: "Name is required." });
   });
 
-  it("should return 500 if description is missing", async () => {
+  it("should return 400 if description is missing", async () => {
     req.fields.description = "";
 
     await createProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({
       error: "Description is required.",
     });
   });
 
-  it("should return 500 if price is missing", async () => {
+  it("should return 400 if price is missing", async () => {
     req.fields.price = "";
 
     await createProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({ error: "Price is required." });
   });
 
-  it("should return 500 if category is missing", async () => {
+  it("should return 400 if category is missing", async () => {
     req.fields.category = "";
 
     await createProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({ error: "Category is required." });
   });
 
-
-  it("should return 500 if quantity is missing", async () => {
+  it("should return 400 if quantity is missing", async () => {
     req.fields.quantity = "";
 
     await createProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({ error: "Quantity is required." });
   });
 
-  it("should return 500 if photo size is too large", async () => {
+  it("should return 413 if photo size is too large", async () => {
     req.files.photo.size = 1500000; // Larger than 1MB limit
 
     await createProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.REQUEST_TOO_LONG);
     expect(res.send).toHaveBeenCalledWith({
       error: "Photo is required and must be less than 1MB.",
     });
@@ -693,64 +692,64 @@ describe("Update Product Controller", () => {
     });
   });
 
-  it("should return 500 if name is missing during update", async () => {
+  it("should return 400 if name is missing during update", async () => {
     req.fields.name = "";
 
     await updateProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({ error: "Name is required." });
     expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
-  it("should return 500 if description is missing during update", async () => {
+  it("should return 400 if description is missing during update", async () => {
     req.fields.description = "";
 
     await updateProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({
       error: "Description is required.",
     });
     expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
-  it("should return 500 if price is missing during update", async () => {
+  it("should return 400 if price is missing during update", async () => {
     req.fields.price = "";
 
     await updateProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({ error: "Price is required." });
     expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
-  it("should return 500 if category is missing during update", async () => {
+  it("should return 400 if category is missing during update", async () => {
     req.fields.category = "";
 
     await updateProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({ error: "Category is required." });
     expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
-  it("should return 500 if quantity is missing during update", async () => {
+  it("should return 400 if quantity is missing during update", async () => {
     req.fields.quantity = "";
 
     await updateProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.send).toHaveBeenCalledWith({ error: "Quantity is required." });
     expect(productModel.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
-  it("should return 500 if photo size is too large during update", async () => {
+  it("should return 413 if photo size is too large during update", async () => {
     req.files.photo.size = 1500000; // Larger than 1MB limit
 
     await updateProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.REQUEST_TOO_LONG);
     expect(res.send).toHaveBeenCalledWith({
       error: "Photo is required and must be less than 1MB.",
     });
@@ -771,7 +770,7 @@ describe("Update Product Controller", () => {
     });
   });
 
-  it("should handle error when saving updated photo", async () => {
+  it("should return 500 to handle error when saving updated photo", async () => {
     const dbError = new Error("DB error");
     const updatedProduct = {
       _id: "66db427fdb0119d9234b27ed",
@@ -845,18 +844,18 @@ describe("Delete Product Controller", () => {
     );
   });
 
-  it("should return 200 when product is not found for deletion", async () => {
-    const deletedProduct = jest.fn().mockResolvedValue(null);
-    productModel.findByIdAndDelete.mockReturnValue({ select: deletedProduct });
+  it("should return 404 when product is not found for deletion", async () => {
+    const selectMock = jest.fn().mockResolvedValue(null);
+    productModel.findByIdAndDelete.mockReturnValue({ select: selectMock });
 
     await deleteProductController(req, res);
 
     expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
-    expect(deletedProduct).toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(selectMock).toHaveBeenCalledWith("-photo");
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.NOT_FOUND);
     expect(res.send).toHaveBeenCalledWith({
-      success: true,
-      message: "Product deleted successfully.",
+      success: false,
+      message: "Product not found.",
     });
   });
 });
@@ -926,21 +925,20 @@ describe("Get Single Product Controller", () => {
     });
   });
 
-  it("should handle case where product is not found", async () => {
-    productModel.findOne.mockReturnValue({
-      select: jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(null),
-      }),
-    });
+  it("should return 404 when product is not found", async () => {
+    const populateMock = jest.fn().mockResolvedValue(null);
+    const selectMock = jest.fn().mockReturnValue({ populate: populateMock });
+    productModel.findOne.mockReturnValue({ select: selectMock });
 
     await getSingleProductController(req, res);
 
     expect(productModel.findOne).toHaveBeenCalledWith({ slug: "test-product" });
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(selectMock).toHaveBeenCalledWith("-photo");
+    expect(populateMock).toHaveBeenCalledWith("category");
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.NOT_FOUND);
     expect(res.send).toHaveBeenCalledWith({
-      success: true,
-      message: "Product fetched successfully.",
-      product: null,
+      success: false,
+      message: "Product not found.",
     });
   });
 });
@@ -1102,14 +1100,14 @@ describe("Product Filters Controller", () => {
     });
   });
 
-  it("should return 400 in case of error during filtering", async () => {
+  it("should return 500 in case of error during filtering", async () => {
     const dbError = new Error("DB error");
     req.body.checked = ["66db427fdb0119d9234b27ed"];
     productModel.find.mockRejectedValue(dbError);
 
     await productFiltersController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       error: dbError.message,
@@ -1117,7 +1115,7 @@ describe("Product Filters Controller", () => {
     });
   });
 
-  it("should handle empty filters and return all products", async () => {
+  it("should return 200 to handle empty filters and return all products", async () => {
     const products = [
       { _id: "p1", name: "Product 1" },
       { _id: "p2", name: "Product 2" },
@@ -1162,19 +1160,17 @@ describe("Product Category Controller", () => {
       { _id: "p1", name: "Product 1", category },
       { _id: "p2", name: "Product 2", category },
     ];
+    const populateMock = jest.fn().mockResolvedValue(products);
     categoryModel.findOne = jest.fn().mockResolvedValue(category);
-    productModel.find = jest.fn().mockReturnValue({
-      populate: jest.fn().mockResolvedValue(products),
-    });
+    productModel.find = jest.fn().mockReturnValue({ populate: populateMock });
 
     await productCategoryController(req, res);
 
     expect(categoryModel.findOne).toHaveBeenCalledWith({
       slug: req.params.slug,
     });
-    expect(productModel.find).toHaveBeenCalledWith({
-      category,
-    });
+    expect(productModel.find).toHaveBeenCalledWith({ category: category._id });
+    expect(populateMock).toHaveBeenCalledWith("category");
     expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
@@ -1183,26 +1179,24 @@ describe("Product Category Controller", () => {
     });
   });
 
-  it("should return empty products array when category exists but has no products", async () => {
+  it("should return 200 with empty products array when category exists but has no products", async () => {
     const category = {
       _id: "66db427fdb0119d9234b27ee",
       name: "Category 1",
       slug: "category-1",
     };
     const products = [];
+    const populateMock = jest.fn().mockResolvedValue(products);
     categoryModel.findOne = jest.fn().mockResolvedValue(category);
-    productModel.find = jest.fn().mockReturnValue({
-      populate: jest.fn().mockResolvedValue(products),
-    });
+    productModel.find = jest.fn().mockReturnValue({ populate: populateMock });
 
     await productCategoryController(req, res);
 
     expect(categoryModel.findOne).toHaveBeenCalledWith({
       slug: req.params.slug,
     });
-    expect(productModel.find).toHaveBeenCalledWith({
-      category,
-    });
+    expect(productModel.find).toHaveBeenCalledWith({ category: category._id });
+    expect(populateMock).toHaveBeenCalledWith("category");
     expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
@@ -1211,27 +1205,23 @@ describe("Product Category Controller", () => {
     });
   });
 
-  it("should handle case when category does not exist", async () => {
-    const category = null;
-    categoryModel.findOne = jest.fn().mockResolvedValue(category);
-    productModel.find = jest.fn().mockReturnValue({
-      populate: jest.fn().mockResolvedValue([]),
-    });
+  it("should return 200 to handle case when category does not exist", async () => {
+    categoryModel.findOne.mockResolvedValue(null);
 
     await productCategoryController(req, res);
 
     expect(categoryModel.findOne).toHaveBeenCalledWith({
       slug: req.params.slug,
     });
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(productModel.find).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.NOT_FOUND);
     expect(res.send).toHaveBeenCalledWith({
-      success: true,
-      category: null,
-      products: [],
+      success: false,
+      message: "Category not found.",
     });
   });
 
-  it("should return 400 in case of error", async () => {
+  it("should return 500 in case of error", async () => {
     const dbError = new Error("DB error");
     categoryModel.findOne = jest.fn().mockRejectedValue(dbError);
 
@@ -1240,7 +1230,7 @@ describe("Product Category Controller", () => {
     expect(categoryModel.findOne).toHaveBeenCalledWith({
       slug: req.params.slug,
     });
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       error: dbError.message,
@@ -1366,7 +1356,7 @@ describe("Product Count Controller", () => {
     });
   });
 
-  it("should return 400 in case of error", async () => {
+  it("should return 500 in case of error", async () => {
     const dbError = new Error("DB error");
     productModel.find = jest.fn().mockReturnValue({
       estimatedDocumentCount: jest.fn().mockRejectedValue(dbError),
@@ -1375,7 +1365,7 @@ describe("Product Count Controller", () => {
     await productCountController(req, res);
 
     expect(productModel.find).toHaveBeenCalledWith({});
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       error: dbError.message,
@@ -1472,7 +1462,7 @@ describe("Product List Controller", () => {
     });
   });
 
-  it("should return 400 in case of error", async () => {
+  it("should return 500 in case of error", async () => {
     const dbError = new Error("DB error");
     productModel.find = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
@@ -1484,7 +1474,7 @@ describe("Product List Controller", () => {
     await productListController(req, res);
 
     expect(productModel.find).toHaveBeenCalledWith({});
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       error: dbError.message,
@@ -1557,7 +1547,7 @@ describe("Related Product Controller", () => {
     });
   });
 
-  it("should return 400 in case of error", async () => {
+  it("should return 500 in case of error", async () => {
     const dbError = new Error("DB error");
     productModel.find = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
@@ -1571,7 +1561,7 @@ describe("Related Product Controller", () => {
       category: req.params.cid,
       _id: { $ne: req.params.pid },
     });
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       error: dbError.message,
@@ -1597,14 +1587,13 @@ describe("Search Product Controller", () => {
     jest.clearAllMocks();
   });
 
-  it("should return products matching the keyword in name or description", async () => {
+  it("should return 200 with products matching the keyword in name or description", async () => {
     const products = [
       { _id: "p1", name: "Test Product", description: "Normal description" },
       { _id: "p2", name: "Another Product", description: "Test description" },
     ];
-    productModel.find.mockReturnValue({
-      select: jest.fn().mockResolvedValue(products),
-    });
+    const selectMock = jest.fn().mockResolvedValue(products);
+    productModel.find = jest.fn().mockReturnValue({ select: selectMock });
 
     await searchProductController(req, res);
 
@@ -1614,26 +1603,45 @@ describe("Search Product Controller", () => {
         { description: { $regex: "test", $options: "i" } },
       ],
     });
-    expect(res.json).toHaveBeenCalledWith(products);
+    expect(selectMock).toHaveBeenCalledWith("-photo");
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      count: products.length,
+      products,
+    });
   });
 
-  it("should return empty array when no products match the search keyword", async () => {
-    productModel.find.mockReturnValue({
-      select: jest.fn().mockResolvedValue([]),
-    });
+  it("should return empty array when keyword is missing or blank", async () => {
+    req.params.keyword = "   ";
 
     await searchProductController(req, res);
 
-    expect(productModel.find).toHaveBeenCalledWith({
-      $or: [
-        { name: { $regex: "test", $options: "i" } },
-        { description: { $regex: "test", $options: "i" } },
-      ],
-    });
     expect(res.json).toHaveBeenCalledWith([]);
+    expect(productModel.find).not.toHaveBeenCalled();
   });
 
-  it("should return 400 in case of error during search", async () => {
+  it("should return 200 with empty array when no products match the search keyword", async () => {
+    const selectMock = jest.fn().mockResolvedValue([]);
+    productModel.find = jest.fn().mockReturnValue({ select: selectMock });
+
+    await searchProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({
+      $or: [
+        { name: { $regex: "test", $options: "i" } },
+        { description: { $regex: "test", $options: "i" } },
+      ],
+    });
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      count: 0,
+      products: [],
+    });
+  });
+
+  it("should return 500 in case of error during search", async () => {
     const dbError = new Error("DB error");
     productModel.find.mockReturnValue({
       select: jest.fn().mockRejectedValue(dbError),
@@ -1641,7 +1649,7 @@ describe("Search Product Controller", () => {
 
     await searchProductController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       error: dbError.message,
@@ -1649,7 +1657,7 @@ describe("Search Product Controller", () => {
     });
   });
 
-  it("should handle special characters in search keyword", async () => {
+  it("should return 200 when handling special characters in search keyword", async () => {
     req.params.keyword = "special+chars?";
     const products = [
       {
@@ -1658,9 +1666,8 @@ describe("Search Product Controller", () => {
         description: "Description",
       },
     ];
-    productModel.find.mockReturnValue({
-      select: jest.fn().mockResolvedValue(products),
-    });
+    const selectMock = jest.fn().mockResolvedValue(products);
+    productModel.find = jest.fn().mockReturnValue({ select: selectMock });
 
     await searchProductController(req, res);
 
@@ -1670,6 +1677,11 @@ describe("Search Product Controller", () => {
         { description: { $regex: "special+chars?", $options: "i" } },
       ],
     });
-    expect(res.json).toHaveBeenCalledWith(products);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      count: products.length,
+      products,
+    });
   });
 });
