@@ -13,7 +13,7 @@ import {
   productPhotoController,
   productCountController,
   productListController,
-  realtedProductController,
+  relatedProductController,
   searchProductController,
 } from "./productController.js";
 import orderModel from "../models/orderModel.js";
@@ -1516,6 +1516,96 @@ describe("Product List Controller", () => {
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Error retrieving products by page.",
+      error: dbError,
+    });
+  });
+});
+
+describe("Related Product Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      params: {
+        pid: "66db427fdb0119d9234b27ed",
+        cid: "66db427fdb0119d9234b27ee",
+      },
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return 200 with related products", async () => {
+    const products = [
+      { _id: "p2", name: "Product 2", category: { name: "Category 1" } },
+      { _id: "p3", name: "Product 3", category: { name: "Category 1" } },
+      { _id: "p4", name: "Product 4", category: { name: "Category 1" } },
+    ];
+
+    productModel.find = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      populate: jest.fn().mockResolvedValue(products),
+    });
+
+    await relatedProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({
+      category: req.params.cid,
+      _id: { $ne: req.params.pid },
+    });
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      products,
+    });
+  });
+
+  it("should return 200 with empty array when no related products exist", async () => {
+    const products = [];
+
+    productModel.find = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      populate: jest.fn().mockResolvedValue(products),
+    });
+
+    await relatedProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({
+      category: req.params.cid,
+      _id: { $ne: req.params.pid },
+    });
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      products: [],
+    });
+  });
+
+  it("should return 400 in case of error", async () => {
+    const dbError = new Error("DB error");
+
+    productModel.find = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      populate: jest.fn().mockRejectedValue(dbError),
+    });
+
+    await relatedProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({
+      category: req.params.cid,
+      _id: { $ne: req.params.pid },
+    });
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Error retrieving related products.",
       error: dbError,
     });
   });
