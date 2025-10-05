@@ -1342,6 +1342,72 @@ describe("Product Photo Controller", () => {
   });
 });
 
+describe("Product Count Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {};
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return 200 with the total product count", async () => {
+    const total = 10;
+
+    productModel.find = jest.fn().mockReturnValue({
+      estimatedDocumentCount: jest.fn().mockResolvedValue(total),
+    });
+
+    await productCountController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      total,
+    });
+  });
+
+  it("should return 0 when no products exist", async () => {
+    const total = 0;
+
+    productModel.find = jest.fn().mockReturnValue({
+      estimatedDocumentCount: jest.fn().mockResolvedValue(total),
+    });
+
+    await productCountController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      total: 0,
+    });
+  });
+
+  it("should return 400 in case of error", async () => {
+    const dbError = new Error("DB error");
+
+    productModel.find = jest.fn().mockReturnValue({
+      estimatedDocumentCount: jest.fn().mockRejectedValue(dbError),
+    });
+
+    await productCountController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.send).toHaveBeenCalledWith({
+      message: "Error retrieving product count.",
+      error: dbError,
+      success: false,
+    });
+  });
+});
+
 describe("Search Product Controller", () => {
   let req, res;
 
