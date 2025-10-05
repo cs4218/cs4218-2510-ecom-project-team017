@@ -7,7 +7,13 @@ import {
   updateProductController,
   deleteProductController,
   getSingleProductController,
+  getProductController,
   productFiltersController,
+  productPhotoController, 
+  productCategoryController,
+  productCountController,
+  productListController,
+  realtedProductController,
   searchProductController,
 } from "./productController.js";
 import orderModel from "../models/orderModel.js";
@@ -928,7 +934,7 @@ describe("Delete Product Controller", () => {
     await deleteProductController(req, res);
 
     expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
-    expect(deletedProduct).toHaveBeenCalled(); 
+    expect(deletedProduct).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
@@ -1051,6 +1057,87 @@ describe("Get Single Product Controller", () => {
       success: true,
       message: "Product fetched successfully.",
       product: null,
+    });
+  });
+});
+
+describe("Get Product Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {};
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return 200 with list of products", async () => {
+    const products = [
+      { _id: "p1", name: "Product 1", category: { name: "Category 1" } },
+      { _id: "p2", name: "Product 2", category: { name: "Category 2" } },
+    ];
+
+    productModel.find = jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockResolvedValue(products),
+    });
+
+    await getProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      counTotal: products.length,
+      message: "All products fetched successfully.",
+      products,
+    });
+  });
+
+  it("should return 200 with empty array when no products exist", async () => {
+    const products = [];
+
+    productModel.find = jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockResolvedValue(products),
+    });
+
+    await getProductController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      counTotal: 0,
+      message: "All products fetched successfully.",
+      products: [],
+    });
+  });
+
+  it("should return 500 in case of error", async () => {
+    const dbError = new Error("Database connection error");
+
+    productModel.find = jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockRejectedValue(dbError),
+    });
+
+    await getProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Error retrieving products.",
+      error: dbError.message,
     });
   });
 });
@@ -1275,3 +1362,4 @@ describe("Search Product Controller", () => {
     expect(res.json).toHaveBeenCalledWith(products);
   });
 });
+
