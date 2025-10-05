@@ -719,7 +719,7 @@ describe("Create Product Controller", () => {
         data: null,
         contentType: null,
       },
-      save: jest.fn().mockRejectedValue(error),
+      save: jest.fn().mockRejectedValue(new Error("DB error")),
     }));
 
     await createProductController(req, res);
@@ -868,7 +868,7 @@ describe("Update Product Controller", () => {
   });
 
   it("should return 500 in case of database error during update", async () => {
-    productModel.findByIdAndUpdate.mockRejectedValue(error);
+    productModel.findByIdAndUpdate.mockRejectedValue(new Error("DB error"));
 
     await updateProductController(req, res);
 
@@ -889,7 +889,7 @@ describe("Update Product Controller", () => {
         data: null,
         contentType: null,
       },
-      save: jest.fn().mockRejectedValue(error),
+      save: jest.fn().mockRejectedValue(new Error("DB error")),
     };
 
     productModel.findByIdAndUpdate.mockResolvedValue(updatedProduct);
@@ -905,61 +905,69 @@ describe("Update Product Controller", () => {
   });
 });
 
-// describe("Delete Product Controller", () => {
-//   let req, res;
+describe("Delete Product Controller", () => {
+  let req, res;
 
-//   beforeEach(() => {
-//     req = { params: { pid: "66db427fdb0119d9234b27ed" } };
-//     res = {
-//       status: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//     };
-//     jest.clearAllMocks();
-//   });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    productModel.findByIdAndDelete = jest.fn();
+    req = { params: { pid: "66db427fdb0119d9234b27ed" } };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+  });
 
-//   it("should return 200 on successful product deletion", async () => {
-//     productModel.findByIdAndDelete.mockResolvedValue({
-//       _id: "66db427fdb0119d9234b27ed",
-//       name: "Deleted Product",
-//     });
+  it("should return 200 on successful product deletion", async () => {
+    const deletedProduct = jest.fn().mockResolvedValue({
+      _id: "66db427fdb0119d9234b27ed",
+      name: "Deleted Product",
+    });
+    productModel.findByIdAndDelete.mockReturnValue({ select: deletedProduct });
 
-//     await deleteProductController(req, res);
+    await deleteProductController(req, res);
 
-//     expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.send).toHaveBeenCalledWith({
-//       success: true,
-//       message: "Product deleted successfully.",
-//     });
-//   });
+    expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
+    expect(deletedProduct).toHaveBeenCalled(); 
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product deleted successfully.",
+    });
+  });
 
-// it("should return 500 in case of error during product deletion", async () => {
-//   productModel.findByIdAndDelete.mockRejectedValueOnce(error);
+  it("should return 500 in case of error during product deletion", async () => {
+    const deletedProduct = jest.fn().mockRejectedValue(new Error("DB error"));
+    productModel.findByIdAndDelete.mockReturnValue({ select: deletedProduct });
 
-//   await deleteProductController(req, res);
+    await deleteProductController(req, res);
 
-//   expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
-//   expect(res.status).toHaveBeenCalledWith(500);
-//   expect(res.send).toHaveBeenCalledWith({
-//     success: false,
-//     message: "Error deleting product.",
-//     error: mockErr,
-//   });
-// });
+    expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
+    expect(deletedProduct).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: "Error deleting product.",
+      })
+    );
+  });
 
-// it("should handle case where product is not found for deletion", async () => {
-//   productModel.findByIdAndDelete.mockResolvedValue(null);
+  it("should return 200 when product is not found for deletion", async () => {
+    const deletedProduct = jest.fn().mockResolvedValue(null);
+    productModel.findByIdAndDelete.mockReturnValue({ select: deletedProduct });
 
-//   await deleteProductController(req, res);
+    await deleteProductController(req, res);
 
-//   expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
-//   expect(res.status).toHaveBeenCalledWith(200);
-//   expect(res.send).toHaveBeenCalledWith({
-//     success: true,
-//     message: "Product deleted successfully.",
-//   });
-// });
-// });
+    expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(req.params.pid);
+    expect(deletedProduct).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      message: "Product deleted successfully.",
+    });
+  });
+});
 
 describe("Get Single Product Controller", () => {
   let req, res;
@@ -1013,7 +1021,7 @@ describe("Get Single Product Controller", () => {
   it("should return 500 in case of error when getting a single product", async () => {
     productModel.findOne.mockReturnValue({
       select: jest.fn().mockReturnValue({
-        populate: jest.fn().mockRejectedValue(error),
+        populate: jest.fn().mockRejectedValue(new Error("DB error")),
       }),
     });
 
@@ -1139,7 +1147,7 @@ describe("Product Filters Controller", () => {
   it("should return 400 in case of error during filtering", async () => {
     req.body.checked = ["66db427fdb0119d9234b27ed"];
 
-    productModel.find.mockRejectedValue(error);
+    productModel.find.mockRejectedValue(new Error("DB error"));
 
     await productFiltersController(req, res);
 
@@ -1228,7 +1236,7 @@ describe("Search Product Controller", () => {
 
   it("should return 400 in case of error during search", async () => {
     productModel.find.mockReturnValue({
-      select: jest.fn().mockRejectedValue(error),
+      select: jest.fn().mockRejectedValue(new Error("DB error")),
     });
 
     await searchProductController(req, res);
