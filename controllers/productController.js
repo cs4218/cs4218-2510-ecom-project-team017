@@ -68,7 +68,7 @@ export const createProductController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
-      error,
+      error: error.message,
       message: "Error creating product.",
     });
   }
@@ -93,8 +93,8 @@ export const getProductController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
-      message: "Error retrieving products.",
       error: error.message,
+      message: "Error retrieving products.",
     });
   }
 };
@@ -115,8 +115,8 @@ export const getSingleProductController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
+      error: error.message,
       message: "Error retrieving product.",
-      error,
     });
   }
 };
@@ -133,8 +133,8 @@ export const productPhotoController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
+      error: error.message,
       message: "Error retrieving product photo.",
-      error,
     });
   }
 };
@@ -151,8 +151,8 @@ export const deleteProductController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
+      error: error.message,
       message: "Error deleting product.",
-      error,
     });
   }
 };
@@ -211,7 +211,7 @@ export const updateProductController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
-      error,
+      error: error.message,
       message: "Error updating product.",
     });
   }
@@ -233,8 +233,8 @@ export const productFiltersController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.BAD_REQUEST).send({
       success: false,
+      error: error.message,
       message: "Error filtering products.",
-      error,
     });
   }
 };
@@ -250,9 +250,9 @@ export const productCountController = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(StatusCodes.BAD_REQUEST).send({
-      message: "Error retrieving product count.",
-      error,
       success: false,
+      error: error.message,
+      message: "Error retrieving product count.",
     });
   }
 };
@@ -276,8 +276,8 @@ export const productListController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.BAD_REQUEST).send({
       success: false,
+      error: error.message,
       message: "Error retrieving products by page.",
-      error,
     });
   }
 };
@@ -299,8 +299,8 @@ export const searchProductController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.BAD_REQUEST).send({
       success: false,
+      error: error.message,
       message: "Error searching products.",
-      error,
     });
   }
 };
@@ -325,8 +325,8 @@ export const relatedProductController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.BAD_REQUEST).send({
       success: false,
+      error: error.message,
       message: "Error retrieving related products.",
-      error,
     });
   }
 };
@@ -345,7 +345,7 @@ export const productCategoryController = async (req, res) => {
     console.log(error);
     res.status(StatusCodes.BAD_REQUEST).send({
       success: false,
-      error,
+      error: error.message,
       message: "Error retrieving products by category.",
     });
   }
@@ -359,8 +359,8 @@ export const braintreeTokenController = async (req, res) => {
       if (err) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
-          message: "Failed to generate token",
           error: err.message,
+          message: "Failed to generate token",
         });
       }
       return res.status(StatusCodes.OK).json({
@@ -371,8 +371,8 @@ export const braintreeTokenController = async (req, res) => {
   } catch (error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Unexpected error during token generation",
       error: error.message,
+      message: "Unexpected error during token generation",
     });
   }
 };
@@ -444,8 +444,8 @@ export const braintreePaymentController = async (req, res) => {
         } catch (saveError) {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
             success: false,
-            message: "Payment succeeded but failed to save order",
             error: saveError.message,
+            message: "Payment succeeded but failed to save order",
           });
         }
       }
@@ -453,8 +453,8 @@ export const braintreePaymentController = async (req, res) => {
   } catch (error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Unexpected error during payment",
       error: error.message,
+      message: "Unexpected error during payment",
     });
   }
 };
