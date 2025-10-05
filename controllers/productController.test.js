@@ -1408,6 +1408,119 @@ describe("Product Count Controller", () => {
   });
 });
 
+describe("Product List Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      params: {},
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return 200 with products for the first page when page param is not provided", async () => {
+    const products = [
+      { _id: "p1", name: "Product 1" },
+      { _id: "p2", name: "Product 2" },
+      { _id: "p3", name: "Product 3" },
+      { _id: "p4", name: "Product 4" },
+      { _id: "p5", name: "Product 5" },
+      { _id: "p6", name: "Product 6" },
+    ];
+
+    productModel.find = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockResolvedValue(products),
+    });
+
+    await productListController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      products,
+    });
+  });
+
+  it("should return 200 with products for the specified page", async () => {
+    req.params.page = "2";
+    const products = [
+      { _id: "p7", name: "Product 7" },
+      { _id: "p8", name: "Product 8" },
+      { _id: "p9", name: "Product 9" },
+      { _id: "p10", name: "Product 10" },
+      { _id: "p11", name: "Product 11" },
+      { _id: "p12", name: "Product 12" },
+    ];
+
+    productModel.find = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockResolvedValue(products),
+    });
+
+    await productListController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      products,
+    });
+  });
+
+  it("should return 200 with empty array when no products exist for a page", async () => {
+    req.params.page = "10";
+    const products = [];
+
+    productModel.find = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockResolvedValue(products),
+    });
+
+    await productListController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith({
+      success: true,
+      products: [],
+    });
+  });
+
+  it("should return 400 in case of error", async () => {
+    const dbError = new Error("DB error");
+
+    productModel.find = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockRejectedValue(dbError),
+    });
+
+    await productListController(req, res);
+
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Error retrieving products by page.",
+      error: dbError,
+    });
+  });
+});
+
 describe("Search Product Controller", () => {
   let req, res;
 
