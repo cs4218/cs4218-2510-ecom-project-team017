@@ -29,27 +29,27 @@ export const createProductController = async (req, res) => {
     switch (true) {
       case !name:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Name is required." });
       case !description:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Description is required." });
       case !price:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Price is required." });
       case !category:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Category is required." });
       case !quantity:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Quantity is required." });
       case photo && photo.size > 1000000:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.REQUEST_TOO_LONG)
           .send({ error: "Photo is required and must be less than 1MB." });
     }
 
@@ -106,6 +106,12 @@ export const getSingleProductController = async (req, res) => {
       .findOne({ slug: req.params.slug })
       .select("-photo")
       .populate("category");
+    if (!product) {
+      return res.status(StatusCodes.NOT_FOUND).send({
+        success: false,
+        message: "Product not found.",
+      });
+    }
     res.status(StatusCodes.OK).send({
       success: true,
       message: "Product fetched successfully.",
@@ -142,7 +148,15 @@ export const productPhotoController = async (req, res) => {
 // delete product
 export const deleteProductController = async (req, res) => {
   try {
-    await productModel.findByIdAndDelete(req.params.pid).select("-photo");
+    const deletedProduct = await productModel
+      .findByIdAndDelete(req.params.pid)
+      .select("-photo");
+    if (!deletedProduct) {
+      return res.status(StatusCodes.NOT_FOUND).send({
+        success: false,
+        message: "Product not found.",
+      });
+    }
     res.status(StatusCodes.OK).send({
       success: true,
       message: "Product deleted successfully.",
@@ -168,27 +182,27 @@ export const updateProductController = async (req, res) => {
     switch (true) {
       case !name:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Name is required." });
       case !description:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Description is required." });
       case !price:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Price is required." });
       case !category:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Category is required." });
       case !quantity:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Quantity is required." });
       case photo && photo.size > 1000000:
         return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .status(StatusCodes.REQUEST_TOO_LONG)
           .send({ error: "Photo is required and must be less than 1MB." });
     }
 
@@ -231,7 +245,7 @@ export const productFiltersController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(StatusCodes.BAD_REQUEST).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       error: error.message,
       message: "Error filtering products.",
@@ -249,7 +263,7 @@ export const productCountController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(StatusCodes.BAD_REQUEST).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       error: error.message,
       message: "Error retrieving product count.",
@@ -274,7 +288,7 @@ export const productListController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(StatusCodes.BAD_REQUEST).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       error: error.message,
       message: "Error retrieving products by page.",
@@ -286,18 +300,25 @@ export const productListController = async (req, res) => {
 export const searchProductController = async (req, res) => {
   try {
     const { keyword } = req.params;
-    const resutls = await productModel
+    if (!keyword || !keyword.trim()) {
+      return res.json([]);
+    }
+    const results = await productModel
       .find({
         $or: [
-          { name: { $regex: keyword, $options: "i" } },
-          { description: { $regex: keyword, $options: "i" } },
+          { name: { $regex: keyword.trim(), $options: "i" } },
+          { description: { $regex: keyword.trim(), $options: "i" } },
         ],
       })
       .select("-photo");
-    res.json(resutls);
+    res.status(StatusCodes.OK).send({
+      success: true,
+      count: results.length,
+      products: results,
+    });
   } catch (error) {
     console.log(error);
-    res.status(StatusCodes.BAD_REQUEST).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       error: error.message,
       message: "Error searching products.",
@@ -323,7 +344,7 @@ export const relatedProductController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(StatusCodes.BAD_REQUEST).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       error: error.message,
       message: "Error retrieving related products.",
@@ -335,7 +356,15 @@ export const relatedProductController = async (req, res) => {
 export const productCategoryController = async (req, res) => {
   try {
     const category = await categoryModel.findOne({ slug: req.params.slug });
-    const products = await productModel.find({ category }).populate("category");
+    if (!category) {
+      return res.status(StatusCodes.NOT_FOUND).send({
+        success: false,
+        message: "Category not found.",
+      });
+    }
+    const products = await productModel
+      .find({ category: category._id })
+      .populate("category");
     res.status(StatusCodes.OK).send({
       success: true,
       category,
@@ -343,7 +372,7 @@ export const productCategoryController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(StatusCodes.BAD_REQUEST).send({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       success: false,
       error: error.message,
       message: "Error retrieving products by category.",
