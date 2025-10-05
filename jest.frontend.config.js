@@ -37,7 +37,12 @@ export default {
     "client/src/pages/Auth/Login.js",
     "client/src/pages/user/Orders.js",
     "client/src/pages/admin/CreateCategory.js",
+    "client/src/pages/admin/CreateProduct.js",
+    "client/src/pages/admin/Products.js",
+    "client/src/pages/admin/UpdateProduct.js",
     "client/src/pages/Categories.js",
+    "client/src/pages/CategoryProduct.js",
+    "client/src/pages/ProductDetails.js",
   ],
   coverageThreshold: {
     // lower coverage thresholds to let CI pass
