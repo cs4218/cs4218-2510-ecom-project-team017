@@ -9,8 +9,8 @@ import {
   getSingleProductController,
   getProductController,
   productFiltersController,
-  productPhotoController, 
   productCategoryController,
+  productPhotoController,
   productCountController,
   productListController,
   realtedProductController,
@@ -1265,6 +1265,83 @@ describe("Product Filters Controller", () => {
   });
 });
 
+describe("Product Photo Controller", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      params: {
+        pid: "66db427fdb0119d9234b27ed",
+      },
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      set: jest.fn(),
+      send: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return 200 with the product photo", async () => {
+    const photoData = Buffer.from("test-image-data");
+    const product = {
+      photo: {
+        data: photoData,
+        contentType: "image/jpeg",
+      },
+    };
+
+    productModel.findById = jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue(product),
+    });
+
+    await productPhotoController(req, res);
+
+    expect(productModel.findById).toHaveBeenCalledWith(req.params.pid);
+    expect(res.set).toHaveBeenCalledWith("Content-type", "image/jpeg");
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
+    expect(res.send).toHaveBeenCalledWith(photoData);
+  });
+
+  it("should handle the case when the product has no photo", async () => {
+    const product = {
+      photo: {
+        data: null,
+        contentType: "image/jpeg",
+      },
+    };
+
+    productModel.findById = jest.fn().mockReturnValue({
+      select: jest.fn().mockResolvedValue(product),
+    });
+
+    await productPhotoController(req, res);
+
+    expect(productModel.findById).toHaveBeenCalledWith(req.params.pid);
+    expect(res.set).not.toHaveBeenCalled();
+    expect(res.send).not.toHaveBeenCalled();
+  });
+
+  it("should return 500 in case of error", async () => {
+    const dbError = new Error("DB error");
+
+    productModel.findById = jest.fn().mockReturnValue({
+      select: jest.fn().mockRejectedValue(dbError),
+    });
+
+    await productPhotoController(req, res);
+
+    expect(productModel.findById).toHaveBeenCalledWith(req.params.pid);
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Error retrieving product photo.",
+      error: dbError,
+    });
+  });
+});
+
 describe("Search Product Controller", () => {
   let req, res;
 
@@ -1362,4 +1439,3 @@ describe("Search Product Controller", () => {
     expect(res.json).toHaveBeenCalledWith(products);
   });
 });
-
