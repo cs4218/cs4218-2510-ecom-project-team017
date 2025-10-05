@@ -171,3 +171,26 @@ To begin unit testing with Jest in your project, follow these steps:
 - Implemented Equivalence Partitioning for efficient test coverage
 - Utilized Pairwise Testing for comprehensive input combination coverage
 - Applied State Transition Testing for user workflow validation
+
+### Caitlyn Tang
+
+**Testing & Quality Assurance**
+- Developed comprehensive unit tests for Category related features using Jest and React Testing Library
+- Authored integration tests covering complete category related workflows and error scenarios
+
+**Bug Identification & Resolution**
+- Identified and fixed critical code issues in the category controller:
+  - **Create Category Controller**:
+      - Fixed 401 status code returned for invalid request (changed to error code 400)
+      - Fixed invalid variable call
+- Enhanced user experience by correcting spelling errors found in toast notifications and return messages
+- Removed unused fragment in CreateCategory.js categories table
+- Implemented input validation of category names
+
+**Code Quality Improvements**
+- Created maintainable test suites with proper mocking strategies and cleanup
+- Corrected code styling errors found for better readability and maintenance 
+
+**Testing Methodology**
+- Employed Equivalence Partitioning for category naming validation testing
+- Utilized Pairwise Testing for comprehensive input combination coverage
