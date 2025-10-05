@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/extend-expect";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import {
@@ -70,6 +70,24 @@ const mockCategories = [
   { _id: "cat123", name: "Electronics" },
   { _id: "cat456", name: "Clothing" },
 ];
+
+// Mock FormData
+class MockFormData {
+  constructor() {
+    this._entries = [];
+  }
+  append(key, value) {
+    this._entries.push([key, value]);
+  }
+  get(key) {
+    const kv = this._entries.find(([k]) => k === key);
+    return kv ? kv[1] : undefined;
+  }
+  entries() {
+    return this._entries[Symbol.iterator]();
+  }
+}
+global.FormData = MockFormData;
 
 describe("UpdateProduct Component", () => {
   const navigateMock = jest.fn();
@@ -168,6 +186,16 @@ describe("UpdateProduct Component", () => {
     fireEvent.change(await screen.findByDisplayValue("Test Product"), {
       target: { value: "Updated Product Name" },
     });
+
+    fireEvent.change(await screen.findByDisplayValue("Test Description"), {
+      target: { value: "Updated Description" },
+    });
+    fireEvent.change(await screen.findByDisplayValue("99.99"), {
+      target: { value: "88.88" },
+    });
+    fireEvent.change(await screen.findByDisplayValue("10"), {
+      target: { value: "88" },
+    });
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
     // Check if form submission works
@@ -177,6 +205,12 @@ describe("UpdateProduct Component", () => {
         expect.any(FormData)
       );
     });
+    // Inspect FormData payload
+    const formDataSent = axios.put.mock.calls[0][1];
+    expect(formDataSent.get("name")).toBe("Updated Product Name");
+    expect(formDataSent.get("description")).toBe("Updated Description");
+    expect(formDataSent.get("price")).toBe("88.88");
+    expect(formDataSent.get("quantity")).toBe("88");
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith(
         "Product updated successfully."
