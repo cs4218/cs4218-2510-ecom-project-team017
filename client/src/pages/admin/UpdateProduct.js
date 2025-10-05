@@ -10,6 +10,7 @@ const { Option } = Select;
 const UpdateProduct = () => {
   const navigate = useNavigate();
   const params = useParams();
+
   const [categories, setCategories] = useState([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -36,22 +37,27 @@ const UpdateProduct = () => {
       setCategory(data.product.category._id);
     } catch (error) {
       console.log(error);
+      toast.error("Couldn’t load product.");
     }
   };
+
   useEffect(() => {
     getSingleProduct();
     //eslint-disable-next-line
   }, []);
-  //get all category
+
+  // get all categories
   const getAllCategory = async () => {
     try {
       const { data } = await axios.get("/api/v1/category/get-category");
       if (data?.success) {
-        setCategories(data?.category);
+        setCategories(data.category || []);
+      } else {
+        toast.error(data?.message || "Couldn’t load categories.");
       }
     } catch (error) {
       console.log(error);
-      toast.error("Something wwent wrong in getting catgeory");
+      toast.error("Couldn’t load categories.");
     }
   };
 
@@ -59,7 +65,7 @@ const UpdateProduct = () => {
     getAllCategory();
   }, []);
 
-  //create product function
+  // update product function
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
@@ -68,39 +74,47 @@ const UpdateProduct = () => {
       productData.append("description", description);
       productData.append("price", price);
       productData.append("quantity", quantity);
-      photo && productData.append("photo", photo);
+      if (photo) productData.append("photo", photo);
       productData.append("category", category);
-      const { data } = axios.put(
+      productData.append("shipping", shipping);
+      const { data } = await axios.put(
         `/api/v1/product/update-product/${id}`,
         productData
       );
       if (data?.success) {
-        toast.error(data?.message);
-      } else {
-        toast.success("Product Updated Successfully");
+        toast.success("Product updated successfully.");
         navigate("/dashboard/admin/products");
+      } else {
+        toast.error(data?.message || "Couldn’t update product.");
       }
     } catch (error) {
       console.log(error);
-      toast.error("something went wrong");
+      toast.error("Couldn’t update product.");
     }
   };
 
-  //delete a product
+  // delete product function
   const handleDelete = async () => {
     try {
-      let answer = window.prompt("Are You Sure want to delete this product ? ");
+      let answer = window.prompt(
+        "Are you sure you want to delete this product?"
+      );
       if (!answer) return;
       const { data } = await axios.delete(
         `/api/v1/product/delete-product/${id}`
       );
-      toast.success("Product DEleted Succfully");
-      navigate("/dashboard/admin/products");
+      if (data?.success) {
+        toast.success("Product deleted successfully.");
+        navigate("/dashboard/admin/products");
+      } else {
+        toast.error(data?.message || "Couldn’t delete product.");
+      }
     } catch (error) {
       console.log(error);
-      toast.error("Something went wrong");
+      toast.error("Couldn’t delete product.");
     }
   };
+
   return (
     <Layout title={"Dashboard - Create Product"}>
       <div className="container-fluid m-3 p-3">
@@ -112,7 +126,7 @@ const UpdateProduct = () => {
             <h1>Update Product</h1>
             <div className="m-1 w-75">
               <Select
-                bordered={false}
+                variant={false}
                 placeholder="Select a category"
                 size="large"
                 showSearch
@@ -130,7 +144,7 @@ const UpdateProduct = () => {
               </Select>
               <div className="mb-3">
                 <label className="btn btn-outline-secondary col-md-12">
-                  {photo ? photo.name : "Upload Photo"}
+                  {photo ? photo.name : "Upload photo"}
                   <input
                     type="file"
                     name="photo"
@@ -200,7 +214,7 @@ const UpdateProduct = () => {
               </div>
               <div className="mb-3">
                 <Select
-                  bordered={false}
+                  variant={false}
                   placeholder="Select Shipping "
                   size="large"
                   showSearch
