@@ -185,7 +185,9 @@ describe("ProductDetails Component", () => {
       </MemoryRouter>
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(axios.get).not.toHaveBeenCalled();
+    // Check that API was not called
+    await waitFor(() => {
+      expect(axios.get).not.toHaveBeenCalled();
+    });
   });
 });
