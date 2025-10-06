@@ -269,6 +269,4 @@ We would like to give credit to AI in helping to generate some of the test cases
 - Utilised mocking techniques (Axios and Mongoose) to simulate backend communication, enabling reliable testing of frontend–backend interactions without relying on live servers
 
 ### 7. Github Workflow
-Please refer to this [link](/https://github.com/cs4218/cs4218-2510-ecom-project-team017/actions) for group 17's github workflow.
-
-Alternatively, visit https://github.com/cs4218/cs4218-2510-ecom-project-team017/actions to access. 
+Please visit https://github.com/cs4218/cs4218-2510-ecom-project-team017/actions to access group 17's github workflow.
