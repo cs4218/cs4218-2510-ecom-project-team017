@@ -267,3 +267,8 @@ We would like to give credit to AI in helping to generate some of the test cases
 - Applied output-based testing and state-based testing, verifying that error codes, response data, and object states (e.g., updated product details) accurately reflected expected outcomes
 - Guided by Control Flow Testing principles to achieve branch-level coverage across controller logic, particularly testing both success and failure branches
 - Utilised mocking techniques (Axios and Mongoose) to simulate backend communication, enabling reliable testing of frontend–backend interactions without relying on live servers
+
+### 7. Github Workflow
+Please refer to this [link](/https://github.com/cs4218/cs4218-2510-ecom-project-team017/actions) for group 17's github workflow.
+
+Alternatively, visit https://github.com/cs4218/cs4218-2510-ecom-project-team017/actions to access. 
