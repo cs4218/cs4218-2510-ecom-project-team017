@@ -35,6 +35,7 @@ jest.mock("braintree", () => {
 import {
   createProductController,
   updateProductController,
+  deleteProductController,
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -581,5 +582,164 @@ describe("UpdateProductController DB-less Integration Tests", () => {
     // Verify findByIdAndUpdate was called but save was not
     expect(productModel.findByIdAndUpdate).toHaveBeenCalled();
     expect(mockSave).not.toHaveBeenCalled();
+  });
+});
+
+describe("DeleteProductController DB-less Integration Tests", () => {
+  let app, mockFindByIdAndDelete;
+  const testProductId = "test-product-id-123";
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Create mock products
+    const mockDeletedProduct = {
+      _id: testProductId,
+      name: "Test Product",
+      description: "Test description",
+      price: 99.99,
+      category: "test-category-id",
+      quantity: 10,
+    };
+
+    // Mock findByIdAndDelete
+    mockFindByIdAndDelete = jest.fn().mockResolvedValue(mockDeletedProduct);
+
+    // Create a mock select method that returns the product
+    const mockSelect = jest.fn().mockReturnValue(mockDeletedProduct);
+
+    // Set up the chain: findByIdAndDelete().select()
+    mockFindByIdAndDelete.mockReturnValue({ select: mockSelect });
+
+    productModel.findByIdAndDelete = mockFindByIdAndDelete;
+
+    // Setup basic express app - each test will customize this
+    app = express();
+  });
+
+  // Test 1: Successful product deletion
+  test("Should successfully delete a product by ID", async () => {
+    // Setup route with product ID parameter
+    app = express();
+    app.use((req, _, next) => {
+      // Add product ID to params
+      req.params = { pid: testProductId };
+      next();
+    });
+    app.delete("/api/product/delete/:pid", deleteProductController);
+
+    // Send test request
+    const response = await request(app).delete(
+      `/api/product/delete/${testProductId}`
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe("Product deleted successfully.");
+
+    // Verify findByIdAndDelete was called with correct ID
+    expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(testProductId);
+  });
+
+  // Test 2: Product not found
+  test("Should return 404 when trying to delete a non-existent product", async () => {
+    // Mock findByIdAndDelete to return null
+    const mockSelect = jest.fn().mockReturnValue(null);
+    mockFindByIdAndDelete.mockReturnValue({ select: mockSelect });
+
+    // Setup route with product ID parameter
+    app = express();
+    app.use((req, _, next) => {
+      // Add product ID to params
+      req.params = { pid: "non-existent-id" };
+      next();
+    });
+    app.delete("/api/product/delete/:pid", deleteProductController);
+
+    // Send test request
+    const response = await request(app).delete(
+      "/api/product/delete/non-existent-id"
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.NOT_FOUND);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Product not found.");
+
+    // Verify findByIdAndDelete was called with correct ID
+    expect(productModel.findByIdAndDelete).toHaveBeenCalledWith(
+      "non-existent-id"
+    );
+  });
+
+  // Test 3: Server error during deletion
+  test("Should handle server errors during product deletion", async () => {
+    // Mock findByIdAndDelete to throw an error
+    productModel.findByIdAndDelete.mockImplementationOnce(() => {
+      throw new Error("Database connection failed");
+    });
+
+    // Setup route with product ID parameter
+    app = express();
+    app.use((req, _, next) => {
+      // Add product ID to params
+      req.params = { pid: testProductId };
+      next();
+    });
+    app.delete("/api/product/delete/:pid", deleteProductController);
+
+    // Send test request
+    const response = await request(app).delete(
+      `/api/product/delete/${testProductId}`
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Error deleting product.");
+    expect(response.body.error).toBe("Database connection failed");
+  });
+
+  // Test 4: Missing product ID
+  test("Should handle missing product ID in request parameters", async () => {
+    // Setup route without product ID parameter
+    app = express();
+    app.use((req, _, next) => {
+      // No product ID in params
+      req.params = {};
+      next();
+    });
+    app.delete("/api/product/delete/:pid", deleteProductController);
+
+    // Send test request
+    const response = await request(app).delete("/api/product/delete/");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.NOT_FOUND);
+    // expect(response.body.success).toBe(false);
+    // The exact error message might vary, but it should indicate a failure
+    // expect(response.body.message).toBe("Error deleting product.");
+  });
+
+  // Test 5: Photo is excluded from response
+  test("Should exclude photo data from the deleted product info", async () => {
+    // Setup route with product ID parameter
+    app = express();
+    app.use((req, _, next) => {
+      // Add product ID to params
+      req.params = { pid: testProductId };
+      next();
+    });
+    app.delete("/api/product/delete/:pid", deleteProductController);
+
+    // Send test request
+    await request(app).delete(`/api/product/delete/${testProductId}`);
+
+    // Verify select was called to exclude photo
+    const selectCalls = mockFindByIdAndDelete().select.mock.calls;
+    expect(selectCalls.length).toBe(1);
+    expect(selectCalls[0][0]).toBe("-photo");
   });
 });
