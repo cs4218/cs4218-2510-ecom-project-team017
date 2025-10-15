@@ -39,6 +39,7 @@ import {
   getSingleProductController,
   getProductController,
   productCountController,
+  productListController
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -1129,5 +1130,126 @@ describe("ProductCountController - DB-less Integration Tests", () => {
     expect(response.body.success).toBe(false);
     expect(response.body.message).toBe("Error retrieving product count.");
     expect(response.body.error).toBe("Database count failed");
+  });
+});
+
+describe("ProductListController - DB-less Integration Tests", () => {
+  let app, mockFind, mockSelect, mockSkip, mockLimit, mockSort;
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Create mock paginated products
+    const mockProducts = [
+      { _id: "product-id-1", name: "Product 1", price: 99.99 },
+      { _id: "product-id-2", name: "Product 2", price: 149.99 },
+      { _id: "product-id-3", name: "Product 3", price: 199.99 },
+      { _id: "product-id-4", name: "Product 4", price: 249.99 },
+      { _id: "product-id-5", name: "Product 5", price: 299.99 },
+      { _id: "product-id-6", name: "Product 6", price: 349.99 },
+    ];
+
+    // Set up method chain: find().select().skip().limit().sort()
+    mockSort = jest.fn().mockResolvedValue(mockProducts);
+    mockLimit = jest.fn().mockReturnValue({ sort: mockSort });
+    mockSkip = jest.fn().mockReturnValue({ limit: mockLimit });
+    mockSelect = jest.fn().mockReturnValue({ skip: mockSkip });
+    mockFind = jest.fn().mockReturnValue({ select: mockSelect });
+
+    // Assign mock chain
+    productModel.find = mockFind;
+
+    // Create a fresh express app
+    app = express();
+  });
+
+  // Test 1: Get paginated product list (page 1)
+  test("Should get the first page of products", async () => {
+    // Setup route with page parameter
+    app.use((req, _, next) => {
+      req.params = { page: "1" };
+      next();
+    });
+    app.get("/api/product/list/:page", productListController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/list/1");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.products.length).toBe(6);
+
+    // Verify method chain
+    expect(mockFind).toHaveBeenCalledWith({});
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+    expect(mockSkip).toHaveBeenCalledWith(0); // (1-1) * 6 = 0
+    expect(mockLimit).toHaveBeenCalledWith(6);
+    expect(mockSort).toHaveBeenCalledWith({ createdAt: -1 });
+  });
+
+  // Test 2: Get paginated product list (page 2)
+  test("Should get the second page of products", async () => {
+    // Setup route with page parameter
+    app.use((req, _, next) => {
+      req.params = { page: "2" };
+      next();
+    });
+    app.get("/api/product/list/:page", productListController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/list/2");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+
+    // Verify method chain with correct skip value
+    expect(mockSkip).toHaveBeenCalledWith(6); // (2-1) * 6 = 6
+  });
+
+  // Test 3: Default to page 1 if no page provided
+  test("Should default to page 1 if no page parameter is provided", async () => {
+    // Setup route without page parameter
+    app.use((req, _, next) => {
+      req.params = {}; // No page parameter
+      next();
+    });
+    app.get("/api/product/list", productListController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/list");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+
+    // Verify skip was called with 0 (first page)
+    expect(mockSkip).toHaveBeenCalledWith(0);
+  });
+
+  // Test 4: Handle server error
+  test("Should handle server errors when getting product list", async () => {
+    // Mock find to throw error
+    productModel.find.mockImplementationOnce(() => {
+      throw new Error("Database pagination failed");
+    });
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = { page: "1" };
+      next();
+    });
+    app.get("/api/product/list/:page", productListController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/list/1");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Error retrieving products by page.");
+    expect(response.body.error).toBe("Database pagination failed");
   });
 });
