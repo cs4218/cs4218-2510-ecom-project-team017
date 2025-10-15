@@ -37,6 +37,7 @@ import {
   updateProductController,
   deleteProductController,
   getSingleProductController,
+  getProductController,
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -903,5 +904,174 @@ describe("GetSingleProductController DB-less Integration Tests", () => {
 
     // Verify populate was called
     expect(mockPopulate).toHaveBeenCalledWith("category");
+  });
+});
+
+describe("GetProductController DB-less Integration Tests", () => {
+  let app, mockFind, mockPopulate, mockSelect, mockLimit, mockSort;
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Create mock products array
+    const mockProducts = [
+      {
+        _id: "product-id-1",
+        name: "Test Product 1",
+        description: "Description 1",
+        price: 99.99,
+        category: {
+          _id: "category-id-1",
+          name: "Category 1",
+          slug: "category-1",
+        },
+        quantity: 10,
+        slug: "test-product-1",
+        createdAt: new Date("2023-01-15"),
+      },
+      {
+        _id: "product-id-2",
+        name: "Test Product 2",
+        description: "Description 2",
+        price: 149.99,
+        category: {
+          _id: "category-id-2",
+          name: "Category 2",
+          slug: "category-2",
+        },
+        quantity: 5,
+        slug: "test-product-2",
+        createdAt: new Date("2023-01-20"),
+      },
+    ];
+
+    // Set up method chain: find().populate().select().limit().sort()
+    mockSort = jest.fn().mockResolvedValue(mockProducts);
+    mockLimit = jest.fn().mockReturnValue({ sort: mockSort });
+    mockSelect = jest.fn().mockReturnValue({ limit: mockLimit });
+    mockPopulate = jest.fn().mockReturnValue({ select: mockSelect });
+    mockFind = jest.fn().mockReturnValue({ populate: mockPopulate });
+
+    // Assign the mock chain to productModel
+    productModel.find = mockFind;
+
+    // Setup basic express app
+    app = express();
+  });
+
+  // Test 1: Successful retrieval of all products
+  test("Should successfully retrieve all products with a limit", async () => {
+    // Setup route
+    app = express();
+    app.get("/api/product/get-all", getProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/get-all");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe("All products fetched successfully.");
+    expect(response.body).toHaveProperty("products");
+    expect(response.body.products.length).toBe(2);
+    expect(response.body.counTotal).toBe(2);
+
+    // Verify the first product in the response
+    const firstProduct = response.body.products[0];
+    expect(firstProduct.name).toBe("Test Product 1");
+    expect(firstProduct.price).toBe(99.99);
+
+    // Verify method chain was called correctly
+    expect(mockFind).toHaveBeenCalledWith({});
+    expect(mockPopulate).toHaveBeenCalledWith("category");
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+    expect(mockLimit).toHaveBeenCalledWith(12);
+    expect(mockSort).toHaveBeenCalledWith({ createdAt: -1 });
+  });
+
+  // Test 2: Empty products array
+  test("Should handle case when no products exist", async () => {
+    // Mock sort to return empty array
+    mockSort.mockResolvedValueOnce([]);
+
+    // Setup route
+    app = express();
+    app.get("/api/product/get-all", getProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/get-all");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe("All products fetched successfully.");
+    expect(response.body.products).toEqual([]);
+    expect(response.body.counTotal).toBe(0);
+
+    // Verify method chain was still called
+    expect(mockFind).toHaveBeenCalledWith({});
+    expect(mockPopulate).toHaveBeenCalledWith("category");
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+  });
+
+  // Test 3: Server error during retrieval
+  test("Should handle server errors during products retrieval", async () => {
+    // Mock find to throw an error
+    productModel.find.mockImplementationOnce(() => {
+      throw new Error("Database connection failed");
+    });
+
+    // Setup route
+    app = express();
+    app.get("/api/product/get-all", getProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/get-all");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Error retrieving products.");
+    expect(response.body.error).toBe("Database connection failed");
+  });
+
+  // Test 4: Verify photo exclusion
+  test("Should exclude photo data from all products", async () => {
+    // Setup route
+    app = express();
+    app.get("/api/product/get-all", getProductController);
+
+    // Send test request
+    await request(app).get("/api/product/get-all");
+
+    // Verify select was called to exclude photo
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+  });
+
+  // Test 5: Verify sort by creation date
+  test("Should sort products by creation date in descending order", async () => {
+    // Setup route
+    app = express();
+    app.get("/api/product/get-all", getProductController);
+
+    // Send test request
+    await request(app).get("/api/product/get-all");
+
+    // Verify sort was called with correct parameters
+    expect(mockSort).toHaveBeenCalledWith({ createdAt: -1 });
+  });
+
+  // Test 6: Verify limit is applied
+  test("Should limit the number of products returned to 12", async () => {
+    // Setup route
+    app = express();
+    app.get("/api/product/get-all", getProductController);
+
+    // Send test request
+    await request(app).get("/api/product/get-all");
+
+    // Verify limit was called with correct parameter
+    expect(mockLimit).toHaveBeenCalledWith(12);
   });
 });
