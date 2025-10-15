@@ -43,6 +43,7 @@ import {
   productListController,
   productCategoryController,
   relatedProductController,
+  searchProductController,
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -1620,5 +1621,184 @@ describe("RelatedProductController - DB-less Integration Tests", () => {
 
     // Verify limit was called with correct parameter
     expect(mockLimit).toHaveBeenCalledWith(3);
+  });
+});
+
+describe("SearchProductController - DB-less Integration Tests", () => {
+  let app, mockFind, mockSelect;
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Create mock products for search results
+    const mockSearchResults = [
+      {
+        _id: "product-id-1",
+        name: "iPhone 13 Pro",
+        description: "Apple iPhone with great features",
+        price: 999.99,
+        category: "electronics-id",
+        quantity: 10,
+        slug: "iphone-13-pro",
+      },
+      {
+        _id: "product-id-2",
+        name: "iPhone 12",
+        description: "Previous generation iPhone",
+        price: 799.99,
+        category: "electronics-id",
+        quantity: 5,
+        slug: "iphone-12",
+      },
+    ];
+
+    // Set up method chain for search: find().select()
+    mockSelect = jest.fn().mockResolvedValue(mockSearchResults);
+    mockFind = jest.fn().mockReturnValue({ select: mockSelect });
+
+    // Assign mock chain to productModel
+    productModel.find = mockFind;
+
+    // Create a fresh express app
+    app = express();
+  });
+
+  // Test 1: Successful search
+  test("Should successfully search products by keyword", async () => {
+    // Setup route with keyword parameter
+    app.use((req, _, next) => {
+      req.params = { keyword: "iphone" };
+      next();
+    });
+    app.get("/api/product/search/:keyword", searchProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/search/iphone");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body).toHaveProperty("products");
+    expect(response.body.products.length).toBe(2);
+    expect(response.body.count).toBe(2);
+
+    // Verify search criteria
+    expect(mockFind).toHaveBeenCalledWith({
+      $or: [
+        { name: { $regex: "iphone", $options: "i" } },
+        { description: { $regex: "iphone", $options: "i" } },
+      ],
+    });
+
+    // Verify photo exclusion
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+  });
+
+  // Test 2: Empty search term
+  test("Should return empty array for empty search term", async () => {
+    // Setup route with empty keyword
+    app.use((req, _, next) => {
+      req.params = { keyword: "" };
+      next();
+    });
+    app.get("/api/product/search/:keyword", searchProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/search/");
+
+    // Assertions
+    expect(response.body).toEqual({});
+
+    // Verify find was not called
+    expect(mockFind).not.toHaveBeenCalled();
+  });
+
+  // Test 3: Search with whitespace
+  test("Should trim whitespace from search keyword", async () => {
+    // Setup route with whitespace in keyword
+    app.use((req, _, next) => {
+      req.params = { keyword: "  iphone  " };
+      next();
+    });
+    app.get("/api/product/search/:keyword", searchProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/search/  iphone  ");
+
+    // Verify search term was trimmed
+    expect(mockFind).toHaveBeenCalledWith({
+      $or: [
+        { name: { $regex: "iphone", $options: "i" } },
+        { description: { $regex: "iphone", $options: "i" } },
+      ],
+    });
+  });
+
+  // Test 4: No search results
+  test("Should return empty products array when no matches found", async () => {
+    // Mock select to return empty array
+    mockSelect.mockResolvedValueOnce([]);
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = { keyword: "nonexistent" };
+      next();
+    });
+    app.get("/api/product/search/:keyword", searchProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/search/nonexistent");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.products).toEqual([]);
+    expect(response.body.count).toBe(0);
+  });
+
+  // Test 5: Server error
+  test("Should handle server errors during search", async () => {
+    // Mock find to throw an error
+    productModel.find.mockImplementationOnce(() => {
+      throw new Error("Database search failed");
+    });
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = { keyword: "iphone" };
+      next();
+    });
+    app.get("/api/product/search/:keyword", searchProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/search/iphone");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Error searching products.");
+    expect(response.body.error).toBe("Database search failed");
+  });
+
+  // Test 6: Special characters in search
+  test("Should handle special characters in search keywords", async () => {
+    // Setup route with special characters in keyword
+    app.use((req, _, next) => {
+      req.params = { keyword: "iphone+pro" };
+      next();
+    });
+    app.get("/api/product/search/:keyword", searchProductController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/search/iphone+pro");
+
+    // Verify search term was passed correctly to the regex
+    expect(mockFind).toHaveBeenCalledWith({
+      $or: [
+        { name: { $regex: "iphone+pro", $options: "i" } },
+        { description: { $regex: "iphone+pro", $options: "i" } },
+      ],
+    });
   });
 });
