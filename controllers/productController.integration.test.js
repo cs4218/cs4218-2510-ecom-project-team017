@@ -44,6 +44,7 @@ import {
   productCategoryController,
   relatedProductController,
   searchProductController,
+  productFiltersController,
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -1800,5 +1801,170 @@ describe("SearchProductController - DB-less Integration Tests", () => {
         { description: { $regex: "iphone+pro", $options: "i" } },
       ],
     });
+  });
+});
+
+describe("ProductFiltersController - DB-less Integration Tests", () => {
+  let app;
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Create mock filtered products
+    const mockFilteredProducts = [
+      {
+        _id: "product-id-1",
+        name: "Budget Laptop",
+        price: 599.99,
+        category: "electronics-id",
+        quantity: 10,
+      },
+      {
+        _id: "product-id-2",
+        name: "Mid-range Laptop",
+        price: 899.99,
+        category: "electronics-id",
+        quantity: 5,
+      },
+    ];
+
+    // Setup find for filters
+    productModel.find = jest.fn().mockResolvedValue(mockFilteredProducts);
+
+    // Create a fresh express app
+    app = express();
+  });
+
+  // Test 1: Filter by category
+  test("Should filter products by category", async () => {
+    // Setup route with body containing category filter
+    app.use(express.json());
+    app.use((req, _, next) => {
+      req.body = {
+        checked: ["electronics-id", "computers-id"],
+        radio: [],
+      };
+      next();
+    });
+    app.post("/api/product/filter", productFiltersController);
+
+    // Send test request
+    const response = await request(app).post("/api/product/filter");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.products.length).toBe(2);
+
+    // Verify find was called with category filter
+    expect(productModel.find).toHaveBeenCalledWith({
+      category: ["electronics-id", "computers-id"],
+    });
+  });
+
+  // Test 2: Filter by price range
+  test("Should filter products by price range", async () => {
+    // Setup route with body containing price filter
+    app.use(express.json());
+    app.use((req, _, next) => {
+      req.body = {
+        checked: [],
+        radio: [500, 1000],
+      };
+      next();
+    });
+    app.post("/api/product/filter", productFiltersController);
+
+    // Send test request
+    const response = await request(app).post("/api/product/filter");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+
+    // Verify find was called with price range filter
+    expect(productModel.find).toHaveBeenCalledWith({
+      price: { $gte: 500, $lte: 1000 },
+    });
+  });
+
+  // Test 3: Filter by both category and price
+  test("Should filter products by both category and price range", async () => {
+    // Setup route with body containing both filters
+    app.use(express.json());
+    app.use((req, _, next) => {
+      req.body = {
+        checked: ["electronics-id"],
+        radio: [500, 1000],
+      };
+      next();
+    });
+    app.post("/api/product/filter", productFiltersController);
+
+    // Send test request
+    const response = await request(app).post("/api/product/filter");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+
+    // Verify find was called with both filters
+    expect(productModel.find).toHaveBeenCalledWith({
+      category: ["electronics-id"],
+      price: { $gte: 500, $lte: 1000 },
+    });
+  });
+
+  // Test 4: Empty filters
+  test("Should return all products when no filters applied", async () => {
+    // Setup route with empty filters
+    app.use(express.json());
+    app.use((req, _, next) => {
+      req.body = {
+        checked: [],
+        radio: [],
+      };
+      next();
+    });
+    app.post("/api/product/filter", productFiltersController);
+
+    // Send test request
+    const response = await request(app).post("/api/product/filter");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+
+    // Verify find was called with empty filter object
+    expect(productModel.find).toHaveBeenCalledWith({});
+  });
+
+  // Test 5: Server error during filtering
+  test("Should handle server errors during filtering", async () => {
+    // Mock find to throw an error
+    productModel.find.mockImplementationOnce(() => {
+      throw new Error("Database filter failed");
+    });
+
+    // Setup route
+    app.use(express.json());
+    app.use((req, _, next) => {
+      req.body = {
+        checked: ["electronics-id"],
+        radio: [500, 1000],
+      };
+      next();
+    });
+    app.post("/api/product/filter", productFiltersController);
+
+    // Send test request
+    const response = await request(app).post("/api/product/filter");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Error filtering products.");
+    expect(response.body.error).toBe("Database filter failed");
   });
 });
