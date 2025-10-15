@@ -36,6 +36,7 @@ import {
   createProductController,
   updateProductController,
   deleteProductController,
+  getSingleProductController,
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -741,5 +742,166 @@ describe("DeleteProductController DB-less Integration Tests", () => {
     const selectCalls = mockFindByIdAndDelete().select.mock.calls;
     expect(selectCalls.length).toBe(1);
     expect(selectCalls[0][0]).toBe("-photo");
+  });
+});
+
+describe("GetSingleProductController DB-less Integration Tests", () => {
+  let app, mockFindOne, mockSelect, mockPopulate;
+  const productSlug = "test-product-slug";
+  const categoryId = "test-category-id";
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Create mock product
+    const mockProduct = {
+      _id: "test-product-id",
+      name: "Test Product",
+      description: "Test description",
+      price: 99.99,
+      category: {
+        _id: categoryId,
+        name: "Test Category",
+        slug: "test-category",
+      },
+      quantity: 10,
+      slug: productSlug,
+    };
+
+    // Set up method chain: findOne().select().populate()
+    mockPopulate = jest.fn().mockResolvedValue(mockProduct);
+    mockSelect = jest.fn().mockReturnValue({ populate: mockPopulate });
+    mockFindOne = jest.fn().mockReturnValue({ select: mockSelect });
+
+    // Assign the mock chain to productModel
+    productModel.findOne = mockFindOne;
+
+    // Setup basic express app
+    app = express();
+  });
+
+  // Test 1: Successful product retrieval
+  test("Should successfully retrieve a product by slug", async () => {
+    // Setup route with slug parameter
+    app = express();
+    app.use((req, _, next) => {
+      // Add slug to params
+      req.params = { slug: productSlug };
+      next();
+    });
+    app.get("/api/product/get/:slug", getSingleProductController);
+
+    // Send test request
+    const response = await request(app).get(`/api/product/get/${productSlug}`);
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe("Product fetched successfully.");
+    expect(response.body).toHaveProperty("product");
+    expect(response.body.product.name).toBe("Test Product");
+    expect(response.body.product.slug).toBe(productSlug);
+
+    // Verify method chain was called correctly
+    expect(mockFindOne).toHaveBeenCalledWith({ slug: productSlug });
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+    expect(mockPopulate).toHaveBeenCalledWith("category");
+  });
+
+  // Test 2: Product not found
+  test("Should return 404 when product with slug does not exist", async () => {
+    // Mock populate to return null (product not found)
+    mockPopulate.mockResolvedValueOnce(null);
+
+    // Setup route with non-existent slug
+    app = express();
+    app.use((req, _, next) => {
+      // Add non-existent slug to params
+      req.params = { slug: "non-existent-slug" };
+      next();
+    });
+    app.get("/api/product/get/:slug", getSingleProductController);
+
+    // Send test request
+    const response = await request(app).get(
+      "/api/product/get/non-existent-slug"
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.NOT_FOUND);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Product not found.");
+
+    // Verify method chain was called
+    expect(mockFindOne).toHaveBeenCalledWith({ slug: "non-existent-slug" });
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+    expect(mockPopulate).toHaveBeenCalledWith("category");
+  });
+
+  // Test 3: Server error during retrieval
+  test("Should handle server errors during product retrieval", async () => {
+    // Mock findOne to throw an error
+    productModel.findOne.mockImplementationOnce(() => {
+      throw new Error("Database connection failed");
+    });
+
+    // Setup route
+    app = express();
+    app.use((req, _, next) => {
+      req.params = { slug: productSlug };
+      next();
+    });
+    app.get("/api/product/get/:slug", getSingleProductController);
+
+    // Send test request
+    const response = await request(app).get(`/api/product/get/${productSlug}`);
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Error retrieving product.");
+    expect(response.body.error).toBe("Database connection failed");
+  });
+
+  // Test 4: Verify photo is excluded from response
+  test("Should exclude photo data from the product response", async () => {
+    // Setup route
+    app = express();
+    app.use((req, _, next) => {
+      req.params = { slug: productSlug };
+      next();
+    });
+    app.get("/api/product/get/:slug", getSingleProductController);
+
+    // Send test request
+    await request(app).get(`/api/product/get/${productSlug}`);
+
+    // Verify select was called to exclude photo
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+  });
+
+  // Test 5: Verify category population
+  test("Should populate the category field in the product response", async () => {
+    // Setup route
+    app = express();
+    app.use((req, _, next) => {
+      req.params = { slug: productSlug };
+      next();
+    });
+    app.get("/api/product/get/:slug", getSingleProductController);
+
+    // Send test request
+    const response = await request(app).get(`/api/product/get/${productSlug}`);
+
+    // Assertions
+    expect(response.body.product.category).toEqual({
+      _id: categoryId,
+      name: "Test Category",
+      slug: "test-category",
+    });
+
+    // Verify populate was called
+    expect(mockPopulate).toHaveBeenCalledWith("category");
   });
 });
