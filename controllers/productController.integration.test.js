@@ -38,6 +38,7 @@ import {
   deleteProductController,
   getSingleProductController,
   getProductController,
+  productCountController,
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -1073,5 +1074,60 @@ describe("GetProductController DB-less Integration Tests", () => {
 
     // Verify limit was called with correct parameter
     expect(mockLimit).toHaveBeenCalledWith(12);
+  });
+});
+
+describe("ProductCountController - DB-less Integration Tests", () => {
+  let app;
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Mock estimatedDocumentCount
+    productModel.find = jest.fn().mockReturnValue({
+      estimatedDocumentCount: jest.fn().mockResolvedValue(25),
+    });
+
+    // Create a fresh express app
+    app = express();
+  });
+
+  // Test 1: Get product count
+  test("Should get the total count of products", async () => {
+    // Setup route
+    app.get("/api/product/count", productCountController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/count");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.total).toBe(25);
+
+    // Verify estimatedDocumentCount was called
+    expect(productModel.find).toHaveBeenCalledWith({});
+    expect(productModel.find().estimatedDocumentCount).toHaveBeenCalled();
+  });
+
+  // Test 2: Handle server error
+  test("Should handle server errors when getting product count", async () => {
+    // Mock find to throw error
+    productModel.find.mockImplementationOnce(() => {
+      throw new Error("Database count failed");
+    });
+
+    // Setup route
+    app.get("/api/product/count", productCountController);
+
+    // Send test request
+    const response = await request(app).get("/api/product/count");
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Error retrieving product count.");
+    expect(response.body.error).toBe("Database count failed");
   });
 });
