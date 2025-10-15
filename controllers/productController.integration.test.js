@@ -42,6 +42,7 @@ import {
   productCountController,
   productListController,
   productCategoryController,
+  relatedProductController,
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -1439,5 +1440,185 @@ describe("ProductCategoryController - DB-less Integration Tests", () => {
       "Error retrieving products by category."
     );
     expect(response.body.error).toBe("Database products lookup failed");
+  });
+});
+
+describe("RelatedProductController - DB-less Integration Tests", () => {
+  let app, mockFind, mockSelect, mockLimit, mockPopulate;
+  const testProductId = "test-product-id";
+  const testCategoryId = "test-category-id";
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Create mock related products
+    const mockRelatedProducts = [
+      {
+        _id: "related-product-id-1",
+        name: "Related Product 1",
+        price: 99.99,
+        category: { _id: testCategoryId, name: "Test Category" },
+      },
+      {
+        _id: "related-product-id-2",
+        name: "Related Product 2",
+        price: 149.99,
+        category: { _id: testCategoryId, name: "Test Category" },
+      },
+      {
+        _id: "related-product-id-3",
+        name: "Related Product 3",
+        price: 199.99,
+        category: { _id: testCategoryId, name: "Test Category" },
+      },
+    ];
+
+    // Set up method chain: find().select().limit().populate()
+    mockPopulate = jest.fn().mockResolvedValue(mockRelatedProducts);
+    mockLimit = jest.fn().mockReturnValue({ populate: mockPopulate });
+    mockSelect = jest.fn().mockReturnValue({ limit: mockLimit });
+    mockFind = jest.fn().mockReturnValue({ select: mockSelect });
+
+    // Assign mock chain
+    productModel.find = mockFind;
+
+    // Create a fresh express app
+    app = express();
+  });
+
+  // Test 1: Get related products
+  test("Should get related products by category excluding the current product", async () => {
+    // Setup route with product and category IDs
+    app.use((req, _, next) => {
+      req.params = {
+        pid: testProductId, // Current product to exclude
+        cid: testCategoryId, // Category to match
+      };
+      next();
+    });
+    app.get("/api/product/related/:pid/:cid", relatedProductController);
+
+    // Send test request
+    const response = await request(app).get(
+      `/api/product/related/${testProductId}/${testCategoryId}`
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.products.length).toBe(3);
+
+    // Verify method chain with correct query
+    expect(mockFind).toHaveBeenCalledWith({
+      category: testCategoryId,
+      _id: { $ne: testProductId },
+    });
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+    expect(mockLimit).toHaveBeenCalledWith(3);
+    expect(mockPopulate).toHaveBeenCalledWith("category");
+  });
+
+  // Test 2: Handle no related products
+  test("Should return empty array when no related products exist", async () => {
+    // Mock populate to return empty array
+    mockPopulate.mockResolvedValueOnce([]);
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = {
+        pid: testProductId,
+        cid: "empty-category-id", // A category with no products
+      };
+      next();
+    });
+    app.get("/api/product/related/:pid/:cid", relatedProductController);
+
+    // Send test request
+    const response = await request(app).get(
+      `/api/product/related/${testProductId}/empty-category-id`
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.products).toEqual([]);
+
+    // Verify find was called with correct params
+    expect(mockFind).toHaveBeenCalledWith({
+      category: "empty-category-id",
+      _id: { $ne: testProductId },
+    });
+  });
+
+  // Test 3: Handle server error
+  test("Should handle server errors when getting related products", async () => {
+    // Mock find to throw error
+    productModel.find.mockImplementationOnce(() => {
+      throw new Error("Database related products fetch failed");
+    });
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = {
+        pid: testProductId,
+        cid: testCategoryId,
+      };
+      next();
+    });
+    app.get("/api/product/related/:pid/:cid", relatedProductController);
+
+    // Send test request
+    const response = await request(app).get(
+      `/api/product/related/${testProductId}/${testCategoryId}`
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Error retrieving related products.");
+    expect(response.body.error).toBe("Database related products fetch failed");
+  });
+
+  // Test 4: Verify photo exclusion
+  test("Should exclude photo data from related products", async () => {
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = {
+        pid: testProductId,
+        cid: testCategoryId,
+      };
+      next();
+    });
+    app.get("/api/product/related/:pid/:cid", relatedProductController);
+
+    // Send test request
+    await request(app).get(
+      `/api/product/related/${testProductId}/${testCategoryId}`
+    );
+
+    // Verify select was called to exclude photo
+    expect(mockSelect).toHaveBeenCalledWith("-photo");
+  });
+
+  // Test 5: Verify limit is applied
+  test("Should limit the number of related products returned to 3", async () => {
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = {
+        pid: testProductId,
+        cid: testCategoryId,
+      };
+      next();
+    });
+    app.get("/api/product/related/:pid/:cid", relatedProductController);
+
+    // Send test request
+    await request(app).get(
+      `/api/product/related/${testProductId}/${testCategoryId}`
+    );
+
+    // Verify limit was called with correct parameter
+    expect(mockLimit).toHaveBeenCalledWith(3);
   });
 });
