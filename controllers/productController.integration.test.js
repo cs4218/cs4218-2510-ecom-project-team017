@@ -5,6 +5,7 @@ import path from "path";
 // import slugify from "slugify";
 import { StatusCodes } from "http-status-codes";
 import productModel from "../models/productModel.js";
+import categoryModel from "../models/categoryModel.js";
 
 // Mock dependencies before importing the controller
 jest.mock("../models/productModel.js");
@@ -39,7 +40,8 @@ import {
   getSingleProductController,
   getProductController,
   productCountController,
-  productListController
+  productListController,
+  productCategoryController,
 } from "../controllers/productController.js";
 
 describe("CreateProductController DB-less Integration Tests", () => {
@@ -1251,5 +1253,191 @@ describe("ProductListController - DB-less Integration Tests", () => {
     expect(response.body.success).toBe(false);
     expect(response.body.message).toBe("Error retrieving products by page.");
     expect(response.body.error).toBe("Database pagination failed");
+  });
+});
+
+describe("ProductCategoryController - DB-less Integration Tests", () => {
+  let app, mockFind, mockPopulate, mockFindOneCategory;
+  const categorySlug = "test-category";
+  const categoryId = "test-category-id";
+
+  beforeEach(() => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Create mock category
+    const mockCategory = {
+      _id: categoryId,
+      name: "Test Category",
+      slug: categorySlug,
+    };
+
+    // Create mock products by category
+    const mockCategoryProducts = [
+      {
+        _id: "product-id-1",
+        name: "Product 1",
+        price: 99.99,
+        description: "Test description 1",
+        category: mockCategory,
+      },
+      {
+        _id: "product-id-2",
+        name: "Product 2",
+        price: 149.99,
+        description: "Test description 2",
+        category: mockCategory,
+      },
+    ];
+
+    // Set up method chain for category: findOne
+    mockFindOneCategory = jest.fn().mockResolvedValue(mockCategory);
+    categoryModel.findOne = mockFindOneCategory;
+
+    // Set up method chain for products: find().populate()
+    mockPopulate = jest.fn().mockResolvedValue(mockCategoryProducts);
+    mockFind = jest.fn().mockReturnValue({ populate: mockPopulate });
+    productModel.find = mockFind;
+
+    // Create a fresh express app
+    app = express();
+  });
+
+  // Test 1: Get products by category
+  test("Should get products by category slug", async () => {
+    // Setup route with category slug
+    app.use((req, _, next) => {
+      req.params = { slug: categorySlug };
+      next();
+    });
+    app.get("/api/product/category/:slug", productCategoryController);
+
+    // Send test request
+    const response = await request(app).get(
+      `/api/product/category/${categorySlug}`
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.products.length).toBe(2);
+    expect(response.body.category.name).toBe("Test Category");
+    expect(response.body.category.slug).toBe(categorySlug);
+
+    // Verify category lookup
+    expect(mockFindOneCategory).toHaveBeenCalledWith({ slug: categorySlug });
+
+    // Verify products lookup
+    expect(mockFind).toHaveBeenCalledWith({ category: categoryId });
+    expect(mockPopulate).toHaveBeenCalledWith("category");
+  });
+
+  // Test 2: Category not found
+  test("Should return 404 when category slug does not exist", async () => {
+    // Mock findOne to return null (category not found)
+    mockFindOneCategory.mockResolvedValueOnce(null);
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = { slug: "non-existent-category" };
+      next();
+    });
+    app.get("/api/product/category/:slug", productCategoryController);
+
+    // Send test request
+    const response = await request(app).get(
+      "/api/product/category/non-existent-category"
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.NOT_FOUND);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Category not found.");
+
+    // Verify product find was NOT called
+    expect(mockFind).not.toHaveBeenCalled();
+  });
+
+  // Test 3: Empty category (no products)
+  test("Should return empty products array for category with no products", async () => {
+    // Mock populate to return empty array
+    mockPopulate.mockResolvedValueOnce([]);
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = { slug: "empty-category" };
+      next();
+    });
+    app.get("/api/product/category/:slug", productCategoryController);
+
+    // Send test request
+    const response = await request(app).get(
+      "/api/product/category/empty-category"
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.products).toEqual([]);
+    expect(response.body).toHaveProperty("category");
+
+    // Verify find was still called
+    expect(mockFind).toHaveBeenCalled();
+  });
+
+  // Test 4: Handle server error during category lookup
+  test("Should handle server errors when looking up category", async () => {
+    // Mock findOne to throw error
+    categoryModel.findOne.mockImplementationOnce(() => {
+      throw new Error("Database category lookup failed");
+    });
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = { slug: categorySlug };
+      next();
+    });
+    app.get("/api/product/category/:slug", productCategoryController);
+
+    // Send test request
+    const response = await request(app).get(
+      `/api/product/category/${categorySlug}`
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe(
+      "Error retrieving products by category."
+    );
+    expect(response.body.error).toBe("Database category lookup failed");
+  });
+
+  // Test 5: Handle server error during products lookup
+  test("Should handle server errors when looking up products by category", async () => {
+    // Mock find to throw error
+    productModel.find.mockImplementationOnce(() => {
+      throw new Error("Database products lookup failed");
+    });
+
+    // Setup route
+    app.use((req, _, next) => {
+      req.params = { slug: categorySlug };
+      next();
+    });
+    app.get("/api/product/category/:slug", productCategoryController);
+
+    // Send test request
+    const response = await request(app).get(
+      `/api/product/category/${categorySlug}`
+    );
+
+    // Assertions
+    expect(response.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe(
+      "Error retrieving products by category."
+    );
+    expect(response.body.error).toBe("Database products lookup failed");
   });
 });
