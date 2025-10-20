@@ -1,4 +1,3 @@
-// AI Attribution: Test generated with GPT assistance for boilerplate setup. Test cases are further refined and modified by @ruth-lim
 /**
  * =====================================================================================================
  * Integration Test for Braintree Payment Flow
@@ -8,7 +7,9 @@
  *   - controllers/productController.js (braintreeTokenController, braintreePaymentController)
  *   - Authentication via JWT
  *   - Models (User, Product, Order, Category)
- **/
+ *
+ * AI Attribution: Test generated with GPT assistance for boilerplate setup. Test cases are further refined and modified by @ruth-lim
+ */
 
 import request from "supertest";
 import JWT from "jsonwebtoken";
