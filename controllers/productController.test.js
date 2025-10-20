@@ -1290,8 +1290,11 @@ describe("Product Photo Controller", () => {
     await productPhotoController(req, res);
 
     expect(productModel.findById).toHaveBeenCalledWith(req.params.pid);
-    expect(res.set).not.toHaveBeenCalled();
-    expect(res.send).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(StatusCodes.NOT_FOUND);
+    expect(res.send).toHaveBeenCalledWith({
+      success: false,
+      message: "Photo not found for this product.",
+    });
   });
 
   it("should return 500 in case of error", async () => {

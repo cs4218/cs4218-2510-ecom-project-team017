@@ -131,6 +131,18 @@ export const getSingleProductController = async (req, res) => {
 export const productPhotoController = async (req, res) => {
   try {
     const product = await productModel.findById(req.params.pid).select("photo");
+    if (!product) {
+      return res.status(StatusCodes.NOT_FOUND).send({
+        success: false,
+        message: "Product not found.",
+      });
+    }
+    if (!product.photo?.data) {
+      return res.status(StatusCodes.NOT_FOUND).send({
+        success: false,
+        message: "Photo not found for this product.",
+      });
+    }
     if (product.photo.data) {
       res.set("Content-type", product.photo.contentType);
       return res.status(StatusCodes.OK).send(product.photo.data);
