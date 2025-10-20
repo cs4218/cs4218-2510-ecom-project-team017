@@ -42,6 +42,7 @@ import {
   productCountController,
   productListController,
   productCategoryController,
+  productPhotoController,
   relatedProductController,
   searchProductController,
   productFiltersController,
@@ -1442,6 +1443,92 @@ describe("ProductCategoryController - DB-less Integration Tests", () => {
       "Error retrieving products by category."
     );
     expect(response.body.error).toBe("Database products lookup failed");
+  });
+});
+
+describe("ProductPhotoController - DB-less Integration Tests", () => {
+  let app, mockFindById, mockSelect;
+  const testProductId = "product-id-123";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // default happy-path mock: findById().select('photo') -> product with photo
+    const mockProduct = {
+      _id: testProductId,
+      photo: {
+        data: Buffer.from("mock image data"),
+        contentType: "image/jpeg",
+      },
+    };
+
+    mockSelect = jest.fn().mockResolvedValue(mockProduct);
+    mockFindById = jest.fn().mockReturnValue({ select: mockSelect });
+
+    productModel.findById = mockFindById;
+
+    app = express();
+    app.get("/api/product/photo/:pid", productPhotoController);
+  });
+
+  // Test 1: success
+  test("Should successfully get a product photo by ID", async () => {
+    const res = await request(app)
+      .get(`/api/product/photo/${testProductId}`)
+      .expect(StatusCodes.OK)
+      .expect("Content-Type", /jpeg/);
+
+    expect(mockFindById).toHaveBeenCalledWith(testProductId);
+    expect(mockSelect).toHaveBeenCalledWith("photo");
+
+    // Supertest gives Buffer when non-JSON binary is returned
+    expect(Buffer.isBuffer(res.body)).toBe(true);
+    expect(Buffer.compare(res.body, Buffer.from("mock image data"))).toBe(0);
+  });
+
+  // Test 2: product without photo data -> expect 404 (or 204/400 per your controller contract)
+  test("Should return 404 when product has no photo data", async () => {
+    mockSelect.mockResolvedValueOnce({
+      _id: testProductId,
+      photo: { contentType: "image/jpeg" }, // no data
+    });
+
+    const res = await request(app)
+      .get(`/api/product/photo/${testProductId}`)
+      .expect(StatusCodes.NOT_FOUND);
+
+    expect(mockFindById).toHaveBeenCalledWith(testProductId);
+    expect(mockSelect).toHaveBeenCalledWith("photo");
+    expect(res.body?.success).toBe(false); // if your controller returns JSON for 404
+  });
+
+  // Test 3: server error path -> simulate rejection from select()
+  test("Should handle server errors when getting product photo", async () => {
+    const err = new Error("Database photo fetch failed");
+    mockFindById.mockReturnValueOnce({
+      select: jest.fn().mockRejectedValue(err),
+    });
+
+    const res = await request(app)
+      .get(`/api/product/photo/${testProductId}`)
+      .expect(StatusCodes.INTERNAL_SERVER_ERROR);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe("Error retrieving product photo.");
+    expect(res.body.error).toBe("Database photo fetch failed");
+  });
+
+  // Test 4: product not found -> expect 404
+  test("Should return 404 for non-existent product ID", async () => {
+    mockSelect.mockResolvedValueOnce(null);
+
+    const res = await request(app)
+      .get("/api/product/photo/non-existent-id")
+      .expect(StatusCodes.NOT_FOUND);
+
+    expect(mockFindById).toHaveBeenCalledWith("non-existent-id");
+    expect(mockSelect).toHaveBeenCalledWith("photo");
+    expect(res.body?.success).toBe(false); // if your controller returns JSON for 404
   });
 });
 
