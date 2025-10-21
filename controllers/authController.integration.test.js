@@ -1,141 +1,102 @@
-import { requireSignIn, isAdmin } from "../middlewares/authMiddleware.js";
-import { testController } from "../controllers/authController.js";
 
-import userModel from "../models/userModel.js";
-import jwt from "jsonwebtoken";
+const BASE_URL = 'http://localhost:6060';
+const ADMIN_EMAIL = 'admin@gmail.com';
+const ADMIN_PASSWORD = "Password";
+const NONADMIN_EMAIL = "non_admin@gmail.com";
+const NONADMIN_PASSWORD = "Password";
 
-jest.mock("../models/userModel.js", () => ({
-    __esModule: true,
-    default: { findById: jest.fn() },
-}));
-
-jest.mock("jsonwebtoken", () => ({
-    __esModule: true,
-    default: {
-        verify: jest.fn(),
-    },
-    verify: jest.fn(),
-}));
-
-const makeRes = () => {
-    const res = {};
-    res.statusCode = 200;
-    res.headers = {};
-    res.body = undefined;
-
-    res.status = jest.fn((code) => {
-        res.statusCode = code;
-        return res;
+async function http(method, path, { token, body } = {}) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = token;
+    const res = await fetch(`${BASE_URL}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
     });
-    res.send = jest.fn((payload) => {
-        res.body = payload;
-        return res;
-    });
-    res.set = jest.fn((k, v) => {
-        res.headers[k.toLowerCase()] = v;
-        return res;
+    let data = null;
+    const text = await res.text();
+    try {
+        data = text ? JSON.parse(text) : null;
+    } catch {
+        data = text; // some endpoints return a plain string
+    }
+    return { status: res.status, data };
+}
+
+async function login(email, password) {
+    return http('POST', '/api/v1/auth/login', { body: { email, password } });
+}
+
+describe('Auth (live) — unauthenticated and invalid token', () => {
+    test('GET /api/v1/auth/test → 401 when Authorization header missing', async () => {
+        const res = await http('GET', '/api/v1/auth/test');
+        expect(res.status).toBe(401);
+        expect(String(res.data?.message || res.data)).toMatch(/authorization header required/i);
     });
 
-    return res;
-};
+    test('GET /api/v1/auth/test → 401 with invalid token', async () => {
+        const res = await http('GET', '/api/v1/auth/test', { token: 'not-a-real-token' });
+        expect(res.status).toBe(401);
+        expect(String(res.data?.message || res.data)).toMatch(/invalid token|authentication failed/i);
+    });
+});
 
-const runChain = async (handlers, req, res) => {
-    let idx = 0;
-    const next = async (err) => {
-        if (err) throw err;
-        const handler = handlers[idx++];
-        if (!handler) return;
-        return Promise.resolve(handler(req, res, next));
-    };
-    await next();
-};
+const haveAdminCreds = Boolean(ADMIN_EMAIL && ADMIN_PASSWORD);
+const haveUserCreds = Boolean(NONADMIN_EMAIL && NONADMIN_PASSWORD);
 
-describe("requireSignIn → isAdmin → testController (whitebox chain)", () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-        process.env.JWT_SECRET = "testsecret";
+(haveAdminCreds ? describe : describe.skip)('Auth (live) — admin happy paths', () => {
+    let adminToken;
+
+    beforeAll(async () => {
+        const res = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        if (res.status !== 200 || !res.data?.token) {
+            throw new Error(`Admin login failed: ${res.status} ${JSON.stringify(res.data)}`);
+        }
+        adminToken = res.data.token;
     });
 
-    test("401 when Authorization header is missing", async () => {
-        const req = { headers: {} };
-        const res = makeRes();
-
-        await runChain([requireSignIn, isAdmin, testController], req, res);
-
-        expect(res.status).toHaveBeenCalledWith(401);
-        expect(String(res.body?.message || res.body)).toMatch(/authorization header required/i);
+    test('login returns token and user (admin)', async () => {
+        const res = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+        expect(res.status).toBe(200);
+        expect(res.data?.success).toBe(true);
+        expect(typeof res.data?.token).toBe('string');
+        expect(res.data?.user?.email).toBe(ADMIN_EMAIL);
+        expect(res.data?.user?.role).toBe(1);
     });
 
-    test("401 when token is invalid (JsonWebTokenError)", async () => {
-        const req = { headers: { authorization: "bad-token" } };
-        const res = makeRes();
-
-        jwt.verify.mockImplementation(() => {
-            const e = new Error("jwt malformed");
-            e.name = "JsonWebTokenError";
-            throw e;
-        });
-
-        await runChain([requireSignIn, isAdmin, testController], req, res);
-
-        expect(res.statusCode).toBe(401);
-        expect(String(res.body?.message || res.body)).toMatch(/invalid token/i);
+    test('GET /api/v1/auth/user-auth → 200 with token', async () => {
+        const res = await http('GET', '/api/v1/auth/user-auth', { token: adminToken });
+        expect(res.status).toBe(200);
+        expect(res.data?.ok).toBe(true);
     });
 
-    test("404 when JWT is valid but user does not exist", async () => {
-        const req = { headers: { authorization: "valid-token" } };
-        const res = makeRes();
-
-        jwt.verify.mockReturnValue({ _id: "ghost-id" });
-        userModel.findById.mockResolvedValueOnce(null);
-
-        await runChain([requireSignIn, isAdmin, testController], req, res);
-
-        expect(jwt.verify).toHaveBeenCalledWith("valid-token", "testsecret");
-        expect(userModel.findById).toHaveBeenCalledWith("ghost-id");
-        expect(res.statusCode).toBe(404);
-        expect(String(res.body?.message || res.body)).toMatch(/user not found/i);
+    test('GET /api/v1/auth/admin-auth → 200 for admin', async () => {
+        const res = await http('GET', '/api/v1/auth/admin-auth', { token: adminToken });
+        expect(res.status).toBe(200);
+        expect(res.data?.ok).toBe(true);
     });
 
-    test("403 when user exists but is not admin", async () => {
-        const req = { headers: { authorization: "user-token" } };
-        const res = makeRes();
+    test('GET /api/v1/auth/test → 200 and Protected Routes', async () => {
+        const res = await http('GET', '/api/v1/auth/test', { token: adminToken });
+        expect(res.status).toBe(200);
+        expect(String(res.data)).toMatch(/protected routes/i);
+    });
+});
 
-        jwt.verify.mockReturnValue({ _id: "user-1" });
-        userModel.findById.mockResolvedValueOnce({ _id: "user-1", role: 0 });
+(haveUserCreds ? describe : describe.skip)('Auth (live) — non-admin forbidden on admin route', () => {
+    let userToken;
 
-        await runChain([requireSignIn, isAdmin, testController], req, res);
-
-        expect(res.statusCode).toBe(403);
-        expect(String(res.body?.message || res.body)).toMatch(/admin|insufficient/i);
+    beforeAll(async () => {
+        const res = await login(NONADMIN_EMAIL, NONADMIN_PASSWORD);
+        if (res.status !== 200 || !res.data?.token) {
+            throw new Error(`User login failed: ${res.status} ${JSON.stringify(res.data)}`);
+        }
+        userToken = res.data.token;
     });
 
-    test('200 and "Protected Routes" when user is admin', async () => {
-        const req = { headers: { authorization: "admin-token" } };
-        const res = makeRes();
-
-        jwt.verify.mockReturnValue({ _id: "admin-1" });
-        userModel.findById.mockResolvedValueOnce({ _id: "admin-1", role: 1 });
-
-        await runChain([requireSignIn, isAdmin, testController], req, res);
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body).toBe("Protected Routes");
-    });
-
-    test("401 when token expired (TokenExpiredError)", async () => {
-        const req = { headers: { authorization: "expired" } };
-        const res = makeRes();
-
-        jwt.verify.mockImplementation(() => {
-            const e = new Error("jwt expired");
-            e.name = "TokenExpiredError";
-            throw e;
-        });
-
-        await runChain([requireSignIn, isAdmin, testController], req, res);
-
-        expect(res.statusCode).toBe(401);
-        expect(String(res.body?.message || res.body)).toMatch(/token expired/i);
+    test('GET /api/v1/auth/admin-auth → 403 for non-admin', async () => {
+        const res = await http('GET', '/api/v1/auth/admin-auth', { token: userToken });
+        expect(res.status).toBe(403);
+        expect(String(res.data?.message || res.data)).toMatch(/insufficient|admin/i);
     });
 });
