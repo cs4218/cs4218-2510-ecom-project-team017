@@ -4,7 +4,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 
 let mongoServer;
 
-export async function connectToTestDb(dbName = "jest-test") {
+export async function connectToTestDb(dbName = "test") {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
 
