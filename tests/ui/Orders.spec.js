@@ -1,10 +1,6 @@
 import { test, expect } from "@playwright/test";
 
 const BASE_URL = "http://localhost:3000";
-const TEST_USER = {
-  email: "cs4218@test.com",
-  password: "cs4218@test.com",
-};
 
 test.describe("Orders Page - UI Tests", () => {
   // Setup: Login before each test
