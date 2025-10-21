@@ -1,6 +1,12 @@
 import "@testing-library/jest-dom/extend-expect";
 import React from "react";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import {
@@ -47,8 +53,8 @@ jest.mock("../../components/AdminMenu", () => {
 // Mock URL.createObjectURL
 global.URL.createObjectURL = jest.fn(() => "mocked-url");
 
-// Mock window.prompt
-global.window.prompt = jest.fn();
+// Mock window.confirm
+global.window.confirm = jest.fn();
 
 // Sample products
 const mockProduct = {
@@ -257,7 +263,7 @@ describe("UpdateProduct Component", () => {
   });
 
   it("handles product deletion when confirmed", async () => {
-    window.prompt.mockReturnValue("yes");
+    window.confirm.mockReturnValue("yes");
     axios.delete.mockResolvedValue({
       data: {
         success: true,
@@ -291,7 +297,7 @@ describe("UpdateProduct Component", () => {
 
     // Check if deletion works
     await waitFor(() => {
-      expect(window.prompt).toHaveBeenCalled();
+      expect(window.confirm).toHaveBeenCalled();
     });
     await waitFor(() => {
       expect(axios.delete).toHaveBeenCalledWith(
@@ -309,7 +315,7 @@ describe("UpdateProduct Component", () => {
   });
 
   it("cancels product deletion when not confirmed", async () => {
-    window.prompt.mockReturnValue(null);
+    window.confirm.mockReturnValue(null);
 
     render(
       <MemoryRouter initialEntries={["/dashboard/admin/product/test-product"]}>
@@ -338,7 +344,7 @@ describe("UpdateProduct Component", () => {
 
     // Check that deletion did not occur
     await waitFor(() => {
-      expect(window.prompt).toHaveBeenCalled();
+      expect(window.confirm).toHaveBeenCalled();
     });
     await waitFor(() => {
       expect(axios.delete).not.toHaveBeenCalled();
