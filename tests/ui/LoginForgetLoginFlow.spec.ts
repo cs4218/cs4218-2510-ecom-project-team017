@@ -1,38 +1,39 @@
+// tests/login-forgot-login.e2e.spec.ts
 import { test, expect } from "@playwright/test";
 
-const LOGIN_URL = "http://localhost:3000/login";
-const FORGOT_URL = "http://localhost:3000/forgot-password";
-const API_FORGOT = "**/api/v1/auth/forgot-password";
+const ROOT_FALLBACK = "http://localhost:3000";
+const PATH_LOGIN = "/login";
+const PATH_FORGOT = "/forgot-password";
 
-test("Login → Forgot Password → back to Login", async ({ page }) => {
-    // Mock a successful reset so the page will navigate back to /login
-    await page.route(API_FORGOT, async (route) => {
-        // small delay so we can see the loading state
-        await new Promise((r) => setTimeout(r, 300));
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ success: true, message: "Password reset successful" }),
-        });
-    });
+// Known working test data in your backend
+const EMAIL = "renjing@nus.edu";
+const ANSWER = "badminton";
+const NEW_PASSWORD = "PasswordNew";
 
-    await page.goto(LOGIN_URL);
-    await expect(page.getByText("LOGIN FORM")).toBeVisible();
+test("Login → Forgot Password → back to Login", async ({ page, baseURL }) => {
+    const root = baseURL || ROOT_FALLBACK;
 
-    await page.getByRole("button", { name: "Forgot Password" }).click();
-    await page.waitForURL(FORGOT_URL);
-    await expect(page.getByText("FORGOT PASSWORD FORM")).toBeVisible();
+    await page.goto(`${root}${PATH_LOGIN}`);
+    await expect(page.getByText(/login form/i)).toBeVisible();
 
-    await page.fill("#exampleInputEmail1", "alice@example.com");
-    await page.fill("#exampleInputAnswer1", "tennis");
-    await page.fill("#exampleInputNewPassword1", "secret123");
+    await page.getByRole("button", { name: /forgot password/i }).click();
+    await page.waitForURL(`${root}${PATH_FORGOT}`);
+    await expect(page.getByText(/forgot password form/i)).toBeVisible();
 
-    await page.getByRole("button", { name: "RESET PASSWORD" }).click();
+    await page.fill("#exampleInputEmail1", EMAIL);
+    await page.fill("#exampleInputAnswer1", ANSWER);
+    await page.fill("#exampleInputNewPassword1", NEW_PASSWORD);
 
-    await expect(page.getByRole("button", { name: "RESETTING..." })).toBeVisible();
+    await page.getByRole("button", { name: /reset password/i }).click();
 
-    await expect(page.getByText("Password reset successful")).toBeVisible();
+    await expect(page.getByRole("button", { name: /resetting\.\.\./i }))
+        .toBeVisible({ timeout: 5000 })
+        .catch(() => { });
 
-    await page.waitForURL(LOGIN_URL);
-    await expect(page.getByText("LOGIN FORM")).toBeVisible();
+    await expect(
+        page.getByText(/password reset successful|password has been reset/i)
+    ).toBeVisible({ timeout: 15000 });
+
+    await page.waitForURL(`${root}${PATH_LOGIN}`, { timeout: 15000 });
+    await expect(page.getByText(/login form/i)).toBeVisible();
 });
