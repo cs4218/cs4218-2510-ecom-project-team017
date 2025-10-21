@@ -3,7 +3,6 @@ import { test, expect } from "@playwright/test";
 test.describe.configure({ mode: "serial" });
 
 test.beforeEach(async ({ page }) => {
-  // Login to access create categories
   await page.goto("http://localhost:3000/login");
   await page.getByRole("link", { name: "Login" }).click();
   await page
