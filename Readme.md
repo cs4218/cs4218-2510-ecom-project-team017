@@ -275,7 +275,7 @@ We would like to give credit to AI in helping to generate some of the test cases
 | Tee Ren Jing          | `controllers/authController.integration.test.js` <br> `helpers/authHelper.integration.test.js` | `tests/ui/ForgotPassword.spec.ts` <br> `tests/ui/Login.spec.ts`<br> `tests/ui/LoginForgetLoginFlow.spec.ts`<br> `tests/ui/Register.spec.ts` <br> `tests/ui/RegisterLoginFlow.spec.ts` |
 | Ruth Lim Sze Ern      | `controllers/orders.integration.test.js` <br> `controllers/payment.integration.test.js`        | `tests/ui/Orders.spec.js` <br> `tests/ui/UpdateProfile.spec.js`                                                                                                                       |
 | He Ruoqing,Vivien     | `controllers/productController.integration.test.js`                                            | [placeholder]                                                                                                                                                                         |
-| Tang Jia Ning Caitlyn | `client/src/pages/admin/CreateCategoryWithForm.test.js` <br> `client/src/pages/CategoriesWithHook.test.js` | `tests/ui/CategoriesPage.spec.ts` <br> `tests/ui/CreateCategory.spec.ts` <br> `tests/ui/CreateCategoryName.spec.ts` |
+| Tang Jia Ning Caitlyn | `client/src/pages/admin/CreateCategoryWithForm.test.js` <br> `client/src/pages/CategoriesWithHook.test.js` <br> `controllers/categoryController.integration.test.js` | `tests/ui/CategoriesPage.spec.ts` <br> `tests/ui/CreateCategory.spec.ts` <br> `tests/ui/CreateCategoryName.spec.ts` |
 
 ### 7. Github Workflow
 
