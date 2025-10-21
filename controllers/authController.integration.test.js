@@ -1,102 +1,138 @@
+/**
+ * Integration tests for Auth routes using in-memory MongoDB and supertest.
+ * connects to a test DB, seeds users, and exercises real Express routes on `app`.
+ */
 
-const BASE_URL = 'http://localhost:6060';
-const ADMIN_EMAIL = 'admin@gmail.com';
-const ADMIN_PASSWORD = "Password";
-const NONADMIN_EMAIL = "non_admin@gmail.com";
-const NONADMIN_PASSWORD = "Password";
+import request from "supertest";
+import JWT from "jsonwebtoken";
+import { connectToTestDb, resetTestDb, disconnectFromTestDb } from "../tests/utils/db.js";
+import app from "../server.js";
+import userModel from "../models/userModel.js";
+import { hashPassword } from "../helpers/authHelper.js";
 
-async function http(method, path, { token, body } = {}) {
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = token;
-    const res = await fetch(`${BASE_URL}${path}`, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-    });
-    let data = null;
-    const text = await res.text();
-    try {
-        data = text ? JSON.parse(text) : null;
-    } catch {
-        data = text; // some endpoints return a plain string
-    }
-    return { status: res.status, data };
-}
+jest.setTimeout(30000);
 
-async function login(email, password) {
-    return http('POST', '/api/v1/auth/login', { body: { email, password } });
-}
-
-describe('Auth (live) — unauthenticated and invalid token', () => {
-    test('GET /api/v1/auth/test → 401 when Authorization header missing', async () => {
-        const res = await http('GET', '/api/v1/auth/test');
-        expect(res.status).toBe(401);
-        expect(String(res.data?.message || res.data)).toMatch(/authorization header required/i);
+const issueToken = (userId) =>
+    JWT.sign({ _id: userId }, process.env.JWT_SECRET || "test-secret-key", {
+        expiresIn: "1h",
     });
 
-    test('GET /api/v1/auth/test → 401 with invalid token', async () => {
-        const res = await http('GET', '/api/v1/auth/test', { token: 'not-a-real-token' });
-        expect(res.status).toBe(401);
-        expect(String(res.data?.message || res.data)).toMatch(/invalid token|authentication failed/i);
-    });
+let adminUser;
+let normalUser;
+let adminToken;
+let userToken;
+
+beforeAll(async () => {
+    await connectToTestDb("auth-integration-tests");
+    await userModel.deleteMany({});
 });
 
-const haveAdminCreds = Boolean(ADMIN_EMAIL && ADMIN_PASSWORD);
-const haveUserCreds = Boolean(NONADMIN_EMAIL && NONADMIN_PASSWORD);
-
-(haveAdminCreds ? describe : describe.skip)('Auth (live) — admin happy paths', () => {
-    let adminToken;
-
-    beforeAll(async () => {
-        const res = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
-        if (res.status !== 200 || !res.data?.token) {
-            throw new Error(`Admin login failed: ${res.status} ${JSON.stringify(res.data)}`);
-        }
-        adminToken = res.data.token;
-    });
-
-    test('login returns token and user (admin)', async () => {
-        const res = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
-        expect(res.status).toBe(200);
-        expect(res.data?.success).toBe(true);
-        expect(typeof res.data?.token).toBe('string');
-        expect(res.data?.user?.email).toBe(ADMIN_EMAIL);
-        expect(res.data?.user?.role).toBe(1);
-    });
-
-    test('GET /api/v1/auth/user-auth → 200 with token', async () => {
-        const res = await http('GET', '/api/v1/auth/user-auth', { token: adminToken });
-        expect(res.status).toBe(200);
-        expect(res.data?.ok).toBe(true);
-    });
-
-    test('GET /api/v1/auth/admin-auth → 200 for admin', async () => {
-        const res = await http('GET', '/api/v1/auth/admin-auth', { token: adminToken });
-        expect(res.status).toBe(200);
-        expect(res.data?.ok).toBe(true);
-    });
-
-    test('GET /api/v1/auth/test → 200 and Protected Routes', async () => {
-        const res = await http('GET', '/api/v1/auth/test', { token: adminToken });
-        expect(res.status).toBe(200);
-        expect(String(res.data)).toMatch(/protected routes/i);
-    });
+afterAll(async () => {
+    await userModel.deleteMany({});
+    await disconnectFromTestDb();
 });
 
-(haveUserCreds ? describe : describe.skip)('Auth (live) — non-admin forbidden on admin route', () => {
-    let userToken;
+beforeEach(async () => {
+    (await resetTestDb?.()) || (await userModel.deleteMany({}));
 
-    beforeAll(async () => {
-        const res = await login(NONADMIN_EMAIL, NONADMIN_PASSWORD);
-        if (res.status !== 200 || !res.data?.token) {
-            throw new Error(`User login failed: ${res.status} ${JSON.stringify(res.data)}`);
-        }
-        userToken = res.data.token;
+    const adminPass = "AdminPass123!";
+    const userPass = "UserPass123!";
+
+    adminUser = await userModel.create({
+        name: "Admin User",
+        email: "admin_test@example.com",
+        password: await hashPassword(adminPass),
+        phone: "555-0001",
+        address: "1 Admin Way",
+        answer: "blue",
+        role: 1,
     });
 
-    test('GET /api/v1/auth/admin-auth → 403 for non-admin', async () => {
-        const res = await http('GET', '/api/v1/auth/admin-auth', { token: userToken });
+    normalUser = await userModel.create({
+        name: "Normal User",
+        email: "user_test@example.com",
+        password: await hashPassword(userPass),
+        phone: "555-0002",
+        address: "2 User Lane",
+        answer: "red",
+        role: 0,
+    });
+
+    adminToken = issueToken(adminUser._id);
+    userToken = issueToken(normalUser._id);
+});
+
+afterEach(async () => {
+    jest.clearAllMocks();
+});
+
+describe("Auth integration — protection and roles", () => {
+    it("denies access without Authorization header", async () => {
+        const res = await request(app).get("/api/v1/auth/test");
+        expect(res.status).toBe(401);
+        expect(String(res.body?.message || res.text)).toMatch(/authorization header required/i);
+    });
+
+    it("denies access with invalid token", async () => {
+        const res = await request(app)
+            .get("/api/v1/auth/test")
+            .set("Authorization", "not-a-valid-token");
+        expect(res.status).toBe(401);
+        expect(String(res.body?.message || res.text)).toMatch(/invalid token|authentication failed/i);
+    });
+
+    it("allows admin to access protected test route", async () => {
+        const res = await request(app)
+            .get("/api/v1/auth/test")
+            .set("Authorization", adminToken);
+        expect(res.status).toBe(200);
+        expect(String(res.text || res.body)).toMatch(/protected routes/i);
+    });
+
+    it("allows any authenticated user for /user-auth", async () => {
+        const res = await request(app)
+            .get("/api/v1/auth/user-auth")
+            .set("Authorization", userToken);
+        expect(res.status).toBe(200);
+        expect(res.body?.ok).toBe(true);
+    });
+
+    it("returns 200 for admin on /admin-auth", async () => {
+        const res = await request(app)
+            .get("/api/v1/auth/admin-auth")
+            .set("Authorization", adminToken);
+        expect(res.status).toBe(200);
+        expect(res.body?.ok).toBe(true);
+    });
+
+    it("returns 403 for non-admin on /admin-auth", async () => {
+        const res = await request(app)
+            .get("/api/v1/auth/admin-auth")
+            .set("Authorization", userToken);
         expect(res.status).toBe(403);
-        expect(String(res.data?.message || res.data)).toMatch(/insufficient|admin/i);
+        expect(String(res.body?.message || res.text)).toMatch(/insufficient|admin/i);
+    });
+});
+
+describe("Auth integration — login flow", () => {
+    it("logs in admin with correct credentials", async () => {
+        const res = await request(app)
+            .post("/api/v1/auth/login")
+            .send({ email: adminUser.email, password: "AdminPass123!" });
+
+        expect(res.status).toBe(200);
+        expect(res.body?.success).toBe(true);
+        expect(typeof res.body?.token).toBe("string");
+        expect(res.body?.user?.email).toBe(adminUser.email);
+        expect(res.body?.user?.role).toBe(1);
+    });
+
+    it("rejects login with wrong password", async () => {
+        const res = await request(app)
+            .post("/api/v1/auth/login")
+            .send({ email: normalUser.email, password: "totallyWrong!" });
+
+        expect([400, 401]).toContain(res.status);
+        expect(res.body?.success).toBe(false);
     });
 });
