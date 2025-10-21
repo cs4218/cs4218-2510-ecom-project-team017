@@ -48,15 +48,38 @@ const Register = () => {
         DOB,
         answer,
       });
-      if (res && res.data.success) {
+
+      if (res && res.data && res.data.success) {
         toast.success("Register Successfully, please login");
         navigate("/login");
       } else {
-        toast.error(res.data.message);
+        const msg =
+          (res && res.data && res.data.message) ||
+          "Registration failed";
+        toast.error(msg);
       }
     } catch (error) {
+      if (axios.isAxiosError && axios.isAxiosError(error)) {
+        const status = error.response && error.response.status;
+
+        // 409: Email already exists
+        if (status === 409) {
+          toast.error("Email already exists");
+        } else {
+          // Prefer server message if present, else Axios error.message, else generic
+          const serverMsg =
+            (error.response &&
+              error.response.data &&
+              (error.response.data.message || error.response.data.error)) ||
+            null;
+
+          const msg = serverMsg || error.message || "Something went wrong";
+          toast.error(msg);
+        }
+      } else {
+        toast.error("Something went wrong");
+      }
       console.log(error);
-      toast.error("Something went wrong");
     }
   };
 

@@ -46,6 +46,7 @@ test.describe('Create Categories Page', () => {
         await page.getByRole('dialog').getByRole('button', { name: 'Submit' }).click();
 
         // Check that name is updated to 'Updated Category Name'
+        await expect(page.getByRole('status')).toContainText('Updated Category Name is updated');
         await expect(page.locator('tbody')).toContainText('Updated Category Name');
         await expect(page.getByRole('cell', { name: 'Updated Category Name' })).toBeVisible();
 
@@ -76,6 +77,7 @@ test.describe('Create Categories Page', () => {
         await page.getByRole('button', { name: 'Delete' }).nth(3).click();
 
         // Wait for the row to be removed (category deleted)
+        await expect(page.getByRole('status')).toContainText('Category is deleted');
         await expect(row).not.toBeVisible();
 
         // Go to Categories page and confirm it's gone
