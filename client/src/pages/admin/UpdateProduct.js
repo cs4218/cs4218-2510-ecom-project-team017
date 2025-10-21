@@ -96,7 +96,7 @@ const UpdateProduct = () => {
   // delete product function
   const handleDelete = async () => {
     try {
-      let answer = window.prompt(
+      let answer = window.confirm(
         "Are you sure you want to delete this product?"
       );
       if (!answer) return;
