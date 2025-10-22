@@ -135,4 +135,15 @@ test.describe("ProductDetails Page", () => {
       page.getByRole("heading", { name: "Similar Products ➡️" })
     ).toBeVisible();
   });
+
+  // Test Case 3: product does not exist
+  test("should be able to see that product does not exist", async ({
+    page,
+  }) => {
+    await page.goto("http://localhost:3000/product/WinterJacket");
+    await expect(
+      page.getByRole("heading", { name: "Product Details" })
+    ).toBeVisible();
+    await expect(page.getByText("Name : Winter Jacket")).toHaveCount(0);
+  });
 });
